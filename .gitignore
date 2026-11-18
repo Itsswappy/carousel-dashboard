@@ -44,3 +44,5 @@ AGENTS.md
 build.log
 dev.log
 .next/
+
+server.log
