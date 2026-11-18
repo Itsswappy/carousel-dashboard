@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carousel Dashboard (Local)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; }
+    .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin { animation: spin 1s linear infinite; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-white text-[#111]">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // ---------- Types / helpers ----------
+    const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+    const DESIGNS = [
+      { id: "minimal", name: "Minimal Educational (black/white/yellow)" },
+      { id: "bold", name: "Bold Dark (inverted)" },
+    ];
+    const defaultSlides = () => ([
+      { kind: "cover", label: "EDUCATIONAL SERIES 01", headline: "Your headline here.", sub: "A short subtitle.", page: "01 / 07", footerLeft: "SYSTEM 01" },
+      { kind: "content", number: "01 / 06", headline: "First insight headline.", yellow: "Key insight highlight.", bullets: ["Action one.", "Action two.", "Action three."], page: "02 / 07", footerLeft: "PROFESSIONAL PUBLISHING - 01" },
+      { kind: "content", number: "02 / 06", headline: "Second insight headline.", yellow: "Key insight highlight.", bullets: ["Action one.", "Action two.", "Action three."], page: "03 / 07", footerLeft: "PROFESSIONAL PUBLISHING - 02" },
+      { kind: "content", number: "03 / 06", headline: "Third insight headline.", yellow: "Key insight highlight.", bullets: ["Action one.", "Action two.", "Action three."], page: "04 / 07", footerLeft: "PROFESSIONAL PUBLISHING - 03" },
+      { kind: "content", number: "04 / 06", headline: "Fourth insight headline.", yellow: "Key insight highlight.", bullets: ["Action one.", "Action two.", "Action three."], page: "05 / 07", footerLeft: "PROFESSIONAL PUBLISHING - 04" },
+      { kind: "content", number: "05 / 06", headline: "Fifth insight headline.", yellow: "Key insight highlight.", bullets: ["Action one.", "Action two.", "Action three."], page: "06 / 07", footerLeft: "PROFESSIONAL PUBLISHING - 05" },
+      { kind: "cta", number: "06 / 06 + NEXT", headline: "Closing call to action.", yellow: "Small system, repeated daily.", bullets: ["Pick one action.", "Schedule it.", "Share with someone."], page: "07 / 07", footerLeft: "Save for later use" },
+    ]);
+
+    // ---------- Storage (localStorage) ----------
+    const LS = { accounts: "cd_accounts", carousels: "cd_carousels", settings: "cd_settings", sb: "cd_supabase_config" };
+    const load = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch { return []; } };
+    const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+    const storage = {
+      listAccounts: () => load(LS.accounts),
+      saveAccount: (a) => { const all = load(LS.accounts); const i = all.findIndex(x=>x.id===a.id); if(i>=0) all[i]=a; else all.unshift(a); save(LS.accounts, all); },
+      deleteAccount: (id) => save(LS.accounts, load(LS.accounts).filter(a=>a.id!==id)),
+      getAccount: (id) => load(LS.accounts).find(a=>a.id===id) || null,
+
+      listCarousels: () => load(LS.carousels),
+      getCarousel: (id) => load(LS.carousels).find(c=>c.id===id) || null,
+      saveCarousel: (c) => { const all = load(LS.carousels); const i = all.findIndex(x=>x.id===c.id); if(i>=0) all[i]=c; else all.unshift(c); save(LS.carousels, all); },
+      deleteCarousel: (id) => save(LS.carousels, load(LS.carousels).filter(c=>c.id!==id)),
+
+      getSettings: () => { const all = load(LS.settings); return all[0] || { aiProvider: "openai", aiApiKey: "" }; },
+      saveSettings: (s) => save(LS.settings, [s]),
+      getSb: () => { try { return JSON.parse(localStorage.getItem(LS.sb) || "null"); } catch { return null; } },
+      setSb: (c) => { if (c) localStorage.setItem(LS.sb, JSON.stringify(c)); else localStorage.removeItem(LS.sb); },
+    };
+
+    // ---------- AI generation ----------
+    async function generateCarousel(topic, designPrompt, provider, apiKey) {
+      const system = `You are a social media carousel content writer. Output ONLY valid JSON. Shape: {"title":"...","slides":[{"kind":"cover","label":"EDUCATIONAL SERIES 01","headline":"...","sub":"...","page":"01 / 07","footerLeft":"..."},{"kind":"content","number":"01 / 06","headline":"...","yellow":"key insight","bullets":["a","b","c"],"page":"02 / 07","footerLeft":"..."},...{"kind":"cta","number":"06 / 06 + NEXT","headline":"...","yellow":"...","bullets":["..."],"page":"07 / 07","footerLeft":"..."}]}. Exactly 7 slides: 1 cover + 5 content + 1 cta. Headlines as outcomes. Bullets as executable actions.`;
+      const userMsg = `Topic: ${topic}\nDesign/style: ${designPrompt || "Minimal educational."}\nGenerate now.`;
+      let text = "";
+      if (provider === "openai") {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({ model: "gpt-4o-mini", messages: [{role:"system",content:system},{role:"user",content:userMsg}], response_format: {type:"json_object"}, temperature: 0.7 }),
+        });
+        if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
+        const j = await res.json();
+        text = j.choices?.[0]?.message?.content || "";
+      } else {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          body: JSON.stringify({ model: "claude-3-5-haiku-latest", max_tokens: 2000, system, messages: [{role:"user",content:userMsg}] }),
+        });
+        if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
+        const j = await res.json();
+        text = j.content?.[0]?.text || "";
+      }
+      const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+      const slides = (parsed.slides || []).map(s => ({ kind: s.kind, label: s.label, number: s.number, headline: s.headline, sub: s.sub, yellow: s.yellow, bullets: s.bullets, page: s.page, footerLeft: s.footerLeft }));
+      return { title: parsed.title || topic, slides };
+    }
+
+    // ---------- SlideView ----------
+    function SlideView({ slide, index, design }) {
+      const dark = design === "bold";
+      const bg = dark ? "bg-[#111] text-white" : "bg-white text-[#111]";
+      const border = dark ? "border-white/20" : "border-[#111]";
+      const muted = dark ? "opacity-60" : "opacity-50";
+      return (
+        <div className={`relative w-full h-full ${bg} border-[1.5px] ${border} flex flex-col justify-between overflow-hidden select-none`} style={{ padding: "48px 40px", width: 400, height: 500 }}>
+          <div>
+            <div className={`text-[10px] font-semibold tracking-[0.18em] uppercase ${muted} mb-10`}>
+              {slide.kind === "cover" ? slide.label : slide.number}
+            </div>
+            <h2 className={`font-extrabold leading-[0.92] tracking-[-0.03em] text-left ${slide.kind === "cover" ? "text-[30px] max-w-[95%]" : "text-[28px] max-w-[92%]"}`} style={{ lineHeight: 0.95 }}>
+              {slide.headline}
+            </h2>
+            {slide.kind === "cover" && slide.sub && (
+              <>
+                <div className={`w-full h-px ${dark ? "bg-white" : "bg-[#111]"} my-6`} />
+                <p className="text-[16px] leading-[1.35] opacity-70 max-w-[80%] text-left">{slide.sub}</p>
+              </>
+            )}
+            {slide.kind !== "cover" && slide.yellow && (
+              <div className="inline-block text-[#111] text-[13px] font-bold leading-[1.2] px-[10px] py-[6px] mt-6 max-w-[90%] text-left" style={{ backgroundColor: "#FFE600" }}>
+                {slide.yellow}
+              </div>
+            )}
+            {slide.kind !== "cover" && slide.bullets && (
+              <ul className="mt-7 flex flex-col gap-[18px]">
+                {slide.bullets.map((b, i) => (
+                  <li key={i} className="text-[14.5px] font-medium leading-[1.32] flex gap-2.5 text-left">
+                    <span className="font-bold shrink-0">→</span>
+                    <span>{String(b).replace(/^→\s?/, "")}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <div className={`w-full h-px ${dark ? "bg-white" : "bg-[#111]"} mt-8 mb-3.5`} />
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] tracking-[0.12em] uppercase opacity-40 font-medium max-w-[60%] truncate">{slide.footerLeft}</span>
+              <span className="text-[10px] tracking-[0.12em] uppercase opacity-40">{slide.page}</span>
+            </div>
+          </div>
+          <div className="pointer-events-none absolute -right-2 -bottom-1 text-[120px] font-[800] leading-none opacity-[0.02] select-none">
+            {String(index + 1).padStart(2, "0")}
+          </div>
+        </div>
+      );
+    }
+
+    // ---------- ExportButton ----------
+    function ExportButton({ slides, design }) {
+      const stageRef = useRef(null);
+      const [busy, setBusy] = useState(false);
+      const [msg, setMsg] = useState(null);
+      async function handleExport() {
+        if (!stageRef.current) return;
+        setBusy(true); setMsg(null);
+        try {
+          if (document.fonts && document.fonts.ready) await document.fonts.ready;
+          const nodes = Array.from(stageRef.current.children);
+          const zip = new JSZip();
+          for (let i = 0; i < nodes.length; i++) {
+            const dataUrl = await htmlToImage.toPng(nodes[i], { pixelRatio: 2.7, cacheBust: true, backgroundColor: "#ffffff" });
+            zip.file(`carousel-slide-${String(i+1).padStart(2,"0")}.png`, dataUrl.split(",")[1], { base64: true });
+            await new Promise(r => setTimeout(r, 50));
+          }
+          const blob = await zip.generateAsync({ type: "blob" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a"); a.href = url; a.download = "carousel-slides.zip"; document.body.appendChild(a); a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+          setMsg(`Exported ${nodes.length} slides at 1080x1350 -> carousel-slides.zip`);
+          setTimeout(() => setMsg(null), 6000);
+        } catch (e) {
+          console.error(e);
+          setMsg("Export failed. Try Chrome/Edge.");
+        } finally { setBusy(false); }
+      }
+      return (
+        <div className="flex flex-col gap-2 items-start">
+          <button onClick={handleExport} disabled={busy} className="group relative inline-flex items-center gap-2.5 bg-[#111] text-white rounded-full px-7 h-[48px] text-[14px] font-semibold tracking-[-0.01em] hover:bg-black transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_2px_0_0_#FFE600]">
+            {busy ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            )}
+            {busy ? "Exporting..." : "Download All Slides (PNG)"}
+          </button>
+          {msg && <div className="text-[13px] font-medium bg-[#FFE600] text-[#111] px-3.5 py-2 rounded-full flex items-center gap-1.5 max-w-[360px]">{msg}</div>}
+          <div ref={stageRef} style={{ position: "fixed", left: "-9999px", top: 0, width: 400, height: "auto", pointerEvents: "none", opacity: 1 }} aria-hidden>
+            {slides.map((s, i) => (
+              <div key={i} style={{ width: 400, height: 500 }}>
+                <SlideView slide={s} index={i} design={design} />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ---------- Nav ----------
+    function Nav({ route, setRoute }) {
+      const links = [{id:"home",label:"Dashboard"},{id:"calendar",label:"Calendar"},{id:"carousels",label:"Carousels"},{id:"accounts",label:"Accounts"},{id:"settings",label:"Settings"}];
+      return (
+        <nav className="border-b border-black/10 bg-white sticky top-0 z-20">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+            <button onClick={() => setRoute("home")} className="font-extrabold tracking-tight text-lg">Carousel<span className="text-[#FFE600] bg-black px-1 ml-1 rounded">DB</span></button>
+            <div className="flex items-center gap-1 flex-wrap">
+              {links.map(l => (
+                <button key={l.id} onClick={() => setRoute(l.id)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${route===l.id ? "bg-black text-white" : "hover:bg-black/5"}`}>{l.label}</button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs opacity-50 hidden md:inline">local@local</span>
+            </div>
+          </div>
+        </nav>
+      );
+    }
+
+    // ---------- App (router via state) ----------
+    function App() {
+      const [route, setRoute] = useState("home");
+      const [params, setParams] = useState({});
+      const nav = (r, p = {}) => { setRoute(r); setParams(p); };
+
+      let page = null;
+      if (route === "home") page = <Home nav={nav} />;
+      else if (route === "calendar") page = <CalendarPage nav={nav} />;
+      else if (route === "carousels") page = <CarouselsPage nav={nav} />;
+      else if (route === "carousels-new") page = <CarouselNew nav={nav} />;
+      else if (route === "carousels-view") page = <CarouselView id={params.id} nav={nav} />;
+      else if (route === "accounts") page = <AccountsPage nav={nav} />;
+      else if (route === "accounts-new") page = <AccountNew nav={nav} />;
+      else if (route === "accounts-edit") page = <AccountEdit id={params.id} nav={nav} />;
+      else if (route === "settings") page = <SettingsPage nav={nav} />;
+
+      return (
+        <div className="min-h-screen bg-white">
+          <Nav route={route} setRoute={(r) => nav(r)} />
+          {page}
+        </div>
+      );
+    }
+
+    // ---------- Home ----------
+    function Home({ nav }) {
+      const carousels = storage.listCarousels();
+      const accounts = storage.listAccounts();
+      const upcoming = carousels.filter(c => c.status !== "done").slice(0, 5);
+      return (
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">Dashboard</h1>
+              <p className="text-sm opacity-60">Your carousel content calendar at a glance.</p>
+            </div>
+            <button onClick={() => nav("carousels-new")} className="bg-black text-white rounded-full px-5 h-10 inline-flex items-center text-sm font-semibold hover:bg-black/80">+ New Carousel</button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            <Stat label="Carousels" value={carousels.length} />
+            <Stat label="Accounts" value={accounts.length} />
+            <Stat label="Scheduled" value={carousels.filter(c=>c.status==="scheduled").length} />
+            <Stat label="Done" value={carousels.filter(c=>c.status==="done").length} />
+          </div>
+          <h2 className="text-lg font-bold mb-3">Upcoming</h2>
+          {upcoming.length === 0 && <p className="text-sm opacity-50">No upcoming carousels. Create one.</p>}
+          <div className="flex flex-col gap-2">
+            {upcoming.map(c => (
+              <button key={c.id} onClick={() => nav("carousels-view", {id: c.id})} className="border border-black/10 rounded-xl p-4 flex items-center justify-between hover:bg-black/5 text-left">
+                <div>
+                  <div className="font-semibold">{c.title}</div>
+                  <div className="text-xs opacity-50">{c.scheduledDate} · {c.status}</div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-black/5">{c.slides.length} slides</span>
+              </button>
+            ))}
+          </div>
+        </main>
+      );
+    }
+    function Stat({ label, value }) {
+      return <div className="border border-black/10 rounded-xl p-4"><div className="text-2xl font-extrabold">{value}</div><div className="text-xs opacity-50 uppercase tracking-wider">{label}</div></div>;
+    }
+
+    // ---------- Calendar ----------
+    function CalendarPage({ nav }) {
+      const carousels = storage.listCarousels();
+      const byDate = {};
+      carousels.forEach(c => { (byDate[c.scheduledDate] = byDate[c.scheduledDate] || []).push(c); });
+      const dates = Object.keys(byDate).sort();
+      return (
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-6">Content Calendar</h1>
+          {dates.length === 0 && <p className="text-sm opacity-50">No scheduled carousels.</p>}
+          <div className="flex flex-col gap-4">
+            {dates.map(d => (
+              <div key={d} className="border border-black/10 rounded-xl p-4">
+                <div className="font-bold mb-2">{d}</div>
+                <div className="flex flex-col gap-2">
+                  {byDate[d].map(c => (
+                    <button key={c.id} onClick={() => nav("carousels-view", {id: c.id})} className="flex items-center justify-between bg-black/5 rounded-lg px-3 py-2 hover:bg-black/10 text-left">
+                      <span className="font-medium">{c.title}</span>
+                      <span className="text-xs opacity-50">{c.status} · {c.slides.length} slides</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      );
+    }
+
+    // ---------- Carousels list ----------
+    function CarouselsPage({ nav }) {
+      const [list, setList] = useState(storage.listCarousels());
+      function refresh() { setList(storage.listCarousels()); }
+      function remove(id) { if (!confirm("Delete carousel?")) return; storage.deleteCarousel(id); refresh(); }
+      return (
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex items-end justify-between mb-6">
+            <h1 className="text-3xl font-extrabold tracking-tight">Carousels</h1>
+            <button onClick={() => nav("carousels-new")} className="bg-black text-white rounded-full px-5 h-10 inline-flex items-center text-sm font-semibold hover:bg-black/80">+ New</button>
+          </div>
+          <div className="grid gap-3">
+            {list.map(c => (
+              <div key={c.id} className="border border-black/10 rounded-xl p-4 flex items-center justify-between">
+                <button onClick={() => nav("carousels-view", {id: c.id})} className="flex-1 text-left">
+                  <div className="font-semibold">{c.title}</div>
+                  <div className="text-xs opacity-50">{c.scheduledDate} · {c.status} · {c.slides.length} slides</div>
+                </button>
+                <div className="flex gap-2">
+                  <button onClick={() => nav("carousels-view", {id: c.id})} className="text-sm px-3 py-1.5 rounded-full border border-black/15 hover:bg-black hover:text-white">Open</button>
+                  <button onClick={() => remove(c.id)} className="text-sm px-3 py-1.5 rounded-full border border-red-200 text-red-600 hover:bg-red-600 hover:text-white">Delete</button>
+                </div>
+              </div>
+            ))}
+            {list.length === 0 && <p className="text-sm opacity-50">No carousels yet.</p>}
+          </div>
+        </main>
+      );
+    }
+
+    // ---------- Carousel new ----------
+    function CarouselNew({ nav }) {
+      const accounts = storage.listAccounts();
+      const [accountId, setAccountId] = useState(accounts[0]?.id || "");
+      const [title, setTitle] = useState("");
+      const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+      const [status, setStatus] = useState("draft");
+      const [slides, setSlides] = useState(defaultSlides());
+      const [slidesJson, setSlidesJson] = useState(JSON.stringify(defaultSlides(), null, 2));
+      const [mode, setMode] = useState("form");
+      const [topic, setTopic] = useState("");
+      const [genBusy, setGenBusy] = useState(false);
+      const [genErr, setGenErr] = useState(null);
+
+      async function handleGenerate() {
+        if (!topic.trim()) return;
+        setGenBusy(true); setGenErr(null);
+        try {
+          const settings = storage.getSettings();
+          const provider = settings.aiProvider || "openai";
+          const apiKey = settings.aiApiKey || "";
+          if (!apiKey) throw new Error("No AI API key set. Go to Settings first.");
+          const acc = accounts.find(a => a.id === accountId);
+          const res = await generateCarousel(topic, acc?.prompt, provider, apiKey);
+          setSlides(res.slides);
+          setSlidesJson(JSON.stringify(res.slides, null, 2));
+          if (!title) setTitle(res.title);
+        } catch (e) { setGenErr(e.message || "Generation failed"); }
+        finally { setGenBusy(false); }
+      }
+
+      function submit(e) {
+        e.preventDefault();
+        let finalSlides = slides;
+        if (mode === "json") { try { finalSlides = JSON.parse(slidesJson); } catch { alert("Invalid JSON"); return; } }
+        const c = { id: uid(), accountId, title: title || "Untitled", scheduledDate: date, status, slides: finalSlides, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+        storage.saveCarousel(c);
+        nav("carousels-view", { id: c.id });
+      }
+
+      const previewSlides = mode === "json" ? (() => { try { return JSON.parse(slidesJson); } catch { return []; } })() : slides;
+
+      return (
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-6">New Carousel</h1>
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <form onSubmit={submit} className="flex flex-col gap-4">
+              <Field label="Title"><input value={title} onChange={e=>setTitle(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" /></Field>
+              <Field label="Account">
+                <select value={accountId} onChange={e=>setAccountId(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full">
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Scheduled date"><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" /></Field>
+              <Field label="Status">
+                <select value={status} onChange={e=>setStatus(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full">
+                  <option value="draft">draft</option><option value="scheduled">scheduled</option><option value="done">done</option>
+                </select>
+              </Field>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setMode(mode==="form"?"json":"form")} className="text-xs px-3 py-1.5 rounded-full border border-black/15">{mode==="form"?"Edit as JSON":"Edit as form"}</button>
+              </div>
+              {mode === "json" && <Field label="Slides JSON"><textarea value={slidesJson} onChange={e=>setSlidesJson(e.target.value)} rows={18} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full font-mono" /></Field>}
+              <button className="bg-black text-white rounded-full h-10 font-semibold text-sm hover:bg-black/80">Save Carousel</button>
+            </form>
+            <div className="flex flex-col gap-4">
+              <div className="border border-black/10 rounded-xl p-4">
+                <h3 className="font-bold mb-2">Generate with AI</h3>
+                <input value={topic} onChange={e=>setTopic(e.target.value)} placeholder="Topic, e.g. How to retain what you learn" className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full mb-3" />
+                <button onClick={handleGenerate} disabled={genBusy} className="bg-[#FFE600] text-black rounded-full h-10 px-5 font-semibold text-sm hover:bg-[#ffd700] disabled:opacity-60">{genBusy ? "Generating..." : "Generate slides"}</button>
+                {genErr && <div className="text-red-600 text-xs mt-2">{genErr}</div>}
+                <p className="text-xs opacity-50 mt-2">Uses API key from Settings. Fills slides (and title).</p>
+              </div>
+              <div className="border border-black/10 rounded-xl p-4">
+                <h3 className="font-bold mb-2">Preview</h3>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {previewSlides.slice(0,3).map((s,i) => (
+                    <div key={i} className="shrink-0 scale-[0.4] origin-top-left" style={{ width: 400, height: 500, marginRight: -240 }}>
+                      <SlideView slide={s} index={i} design={accounts.find(a=>a.id===accountId)?.design || "minimal"} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      );
+    }
+
+    // ---------- Carousel view ----------
+    function CarouselView({ id, nav }) {
+      const [c, setC] = useState(null);
+      const [accounts, setAccounts] = useState(storage.listAccounts());
+      const [active, setActive] = useState(0);
+      useEffect(() => { setC(storage.getCarousel(id)); }, [id]);
+      if (!c) return <main className="p-10">Loading...</main>;
+      const account = accounts.find(a => a.id === c.accountId);
+      const design = account?.design || "minimal";
+      function updateStatus(status) {
+        const updated = { ...c, status, updatedAt: new Date().toISOString() };
+        storage.saveCarousel(updated); setC(updated);
+      }
+      function remove() { if (!confirm("Delete?")) return; storage.deleteCarousel(c.id); nav("carousels"); }
+      return (
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">{c.title}</h1>
+              <p className="text-sm opacity-60">{c.scheduledDate} · {c.status} · {account?.name} · {design}</p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <ExportButton slides={c.slides} design={design} />
+              <button onClick={() => updateStatus("done")} className="text-sm px-3 py-1.5 rounded-full border border-black/15 hover:bg-black hover:text-white">Mark done</button>
+              <button onClick={remove} className="text-sm px-3 py-1.5 rounded-full border border-red-200 text-red-600 hover:bg-red-600 hover:text-white">Delete</button>
+            </div>
+          </div>
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4">
+            {c.slides.map((s, i) => (
+              <div key={i} className="shrink-0" style={{ width: 280 }}>
+                <div className="scale-[0.7] origin-top-left" style={{ width: 400, height: 500, marginBottom: -150 }}>
+                  <SlideView slide={s} index={i} design={design} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex gap-2">
+            {c.slides.map((_, i) => (
+              <button key={i} onClick={() => setActive(i)} className={`h-2 rounded-full transition-all ${active === i ? "w-6 bg-black" : "w-2 bg-black/20"}`} />
+            ))}
+          </div>
+        </main>
+      );
+    }
+
+    // ---------- Accounts list ----------
+    function AccountsPage({ nav }) {
+      const [list, setList] = useState(storage.listAccounts());
+      function refresh() { setList(storage.listAccounts()); }
+      function remove(id) { if (!confirm("Delete account?")) return; storage.deleteAccount(id); refresh(); }
+      return (
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex items-end justify-between mb-6">
+            <h1 className="text-3xl font-extrabold tracking-tight">Accounts</h1>
+            <button onClick={() => nav("accounts-new")} className="bg-black text-white rounded-full px-5 h-10 inline-flex items-center text-sm font-semibold hover:bg-black/80">+ New Account</button>
+          </div>
+          <div className="grid gap-3">
+            {list.map(a => (
+              <div key={a.id} className="border border-black/10 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <div className="font-semibold">{a.name}</div>
+                  <div className="text-xs opacity-50">{a.design} · {a.accentColor}</div>
+                  {a.prompt && <div className="text-xs opacity-40 mt-1 line-clamp-2 max-w-xl">{a.prompt.slice(0, 120)}</div>}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => nav("accounts-edit", {id: a.id})} className="text-sm px-3 py-1.5 rounded-full border border-black/15 hover:bg-black hover:text-white">Edit</button>
+                  <button onClick={() => remove(a.id)} className="text-sm px-3 py-1.5 rounded-full border border-red-200 text-red-600 hover:bg-red-600 hover:text-white">Delete</button>
+                </div>
+              </div>
+            ))}
+            {list.length === 0 && <p className="text-sm opacity-50">No accounts yet.</p>}
+          </div>
+        </main>
+      );
+    }
+
+    // ---------- Account new ----------
+    function AccountNew({ nav }) {
+      const [name, setName] = useState("");
+      const [design, setDesign] = useState("minimal");
+      const [accent, setAccent] = useState("#FFE600");
+      const [prompt, setPrompt] = useState("");
+      function submit(e) {
+        e.preventDefault();
+        storage.saveAccount({ id: uid(), name, design, accentColor: accent, prompt, createdAt: new Date().toISOString() });
+        nav("accounts");
+      }
+      return (
+        <main className="max-w-2xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-6">New Account</h1>
+          <form onSubmit={submit} className="flex flex-col gap-4">
+            <Field label="Account name"><input value={name} onChange={e=>setName(e.target.value)} required className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" /></Field>
+            <Field label="Design">
+              <select value={design} onChange={e=>setDesign(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full">
+                {DESIGNS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Accent color"><input type="color" value={accent} onChange={e=>setAccent(e.target.value)} className="h-10 w-20" /></Field>
+            <Field label="Design prompt / style notes"><textarea value={prompt} onChange={e=>setPrompt(e.target.value)} rows={6} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" placeholder="Describe the visual style & tone..." /></Field>
+            <button className="bg-black text-white rounded-full h-10 font-semibold text-sm hover:bg-black/80">Save Account</button>
+          </form>
+        </main>
+      );
+    }
+
+    // ---------- Account edit ----------
+    function AccountEdit({ id, nav }) {
+      const [acc, setAcc] = useState(storage.getAccount(id));
+      if (!acc) return <main className="p-10">Loading...</main>;
+      function submit(e) {
+        e.preventDefault();
+        storage.saveAccount(acc);
+        nav("accounts");
+      }
+      return (
+        <main className="max-w-2xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-6">Edit Account</h1>
+          <form onSubmit={submit} className="flex flex-col gap-4">
+            <Field label="Account name"><input value={acc.name} onChange={e=>setAcc({...acc,name:e.target.value})} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" /></Field>
+            <Field label="Design">
+              <select value={acc.design} onChange={e=>setAcc({...acc,design:e.target.value})} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full">
+                {DESIGNS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Accent color"><input type="color" value={acc.accentColor} onChange={e=>setAcc({...acc,accentColor:e.target.value})} className="h-10 w-20" /></Field>
+            <Field label="Design prompt"><textarea value={acc.prompt||""} onChange={e=>setAcc({...acc,prompt:e.target.value})} rows={6} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" /></Field>
+            <button className="bg-black text-white rounded-full h-10 font-semibold text-sm hover:bg-black/80">Save</button>
+          </form>
+        </main>
+      );
+    }
+
+    // ---------- Settings ----------
+    function SettingsPage({ nav }) {
+      const settings = storage.getSettings();
+      const [provider, setProvider] = useState(settings.aiProvider || "openai");
+      const [key, setKey] = useState(settings.aiApiKey || "");
+      const sb = storage.getSb();
+      const [sbUrl, setSbUrl] = useState(sb?.url || "");
+      const [sbKey, setSbKey] = useState(sb?.anonKey || "");
+      const [msg, setMsg] = useState(null);
+      function save(e) {
+        e.preventDefault();
+        storage.saveSettings({ aiProvider: provider, aiApiKey: key });
+        storage.setSb(sbUrl && sbKey ? { url: sbUrl.trim(), anonKey: sbKey.trim() } : null);
+        setMsg("Saved.");
+        setTimeout(() => setMsg(null), 3000);
+      }
+      return (
+        <main className="max-w-2xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-6">Settings</h1>
+          <form onSubmit={save} className="flex flex-col gap-4">
+            <fieldset className="border border-black/10 rounded-xl p-4 flex flex-col gap-3">
+              <legend className="text-xs uppercase tracking-wider opacity-60 px-2">Supabase (optional, for sync)</legend>
+              <Field label="Supabase URL"><input value={sbUrl} onChange={e=>setSbUrl(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" placeholder="https://xxxx.supabase.co" /></Field>
+              <Field label="Supabase anon key"><input value={sbKey} onChange={e=>setSbKey(e.target.value)} type="password" className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" placeholder="eyJ..." /></Field>
+              <p className="text-xs opacity-50">Leave blank for local-only mode. Get these from Supabase → Project Settings → API.</p>
+            </fieldset>
+            <fieldset className="border border-black/10 rounded-xl p-4 flex flex-col gap-3">
+              <legend className="text-xs uppercase tracking-wider opacity-60 px-2">AI generation</legend>
+              <Field label="AI provider">
+                <select value={provider} onChange={e=>setProvider(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full">
+                  <option value="openai">OpenAI (gpt-4o-mini)</option>
+                  <option value="anthropic">Anthropic (claude-3-5-haiku)</option>
+                </select>
+              </Field>
+              <Field label="API key"><input value={key} onChange={e=>setKey(e.target.value)} type="password" className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" placeholder="sk-..." /></Field>
+            </fieldset>
+            <button className="bg-black text-white rounded-full h-10 font-semibold text-sm hover:bg-black/80">Save</button>
+            {msg && <div className="text-sm text-green-600">{msg}</div>}
+          </form>
+        </main>
+      );
+    }
+
+    function Field({ label, children }) {
+      return <label className="flex flex-col gap-1"><span className="text-xs uppercase tracking-wider opacity-60">{label}</span>{children}</label>;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
