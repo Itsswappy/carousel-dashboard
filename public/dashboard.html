@@ -16,9 +16,41 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .animate-spin { animation: spin 1s linear infinite; }
+
+    /* ---------- Dashboard dark mode (slides are unaffected) ---------- */
+    body.dark-ui { background: #0B0B0C; color: #F4F4F5; }
+    .app-dark { background: #0B0B0C !important; color: #F4F4F5; }
+    .app-dark nav { background: #0B0B0C !important; border-color: rgba(255,255,255,0.12) !important; }
+    .app-dark .bg-white { background-color: #0B0B0C !important; }
+    .app-dark .bg-\[\#111\] { background-color: #F4F4F5 !important; }
+    .app-dark .bg-black { background-color: #F4F4F5 !important; }
+    .app-dark .bg-black\/5 { background-color: rgba(255,255,255,0.06) !important; }
+    .app-dark .bg-black\/10 { background-color: rgba(255,255,255,0.10) !important; }
+    .app-dark .hover\:bg-black\/5:hover { background-color: rgba(255,255,255,0.08) !important; }
+    .app-dark .hover\:bg-black\/10:hover { background-color: rgba(255,255,255,0.12) !important; }
+    .app-dark .border-black\/10 { border-color: rgba(255,255,255,0.14) !important; }
+    .app-dark .border-black\/15 { border-color: rgba(255,255,255,0.20) !important; }
+    .app-dark .border-black\/20 { border-color: rgba(255,255,255,0.24) !important; }
+    .app-dark .text-\[\#111\] { color: #F4F4F5 !important; }
+    .app-dark .text-white { color: #0B0B0C !important; }
+    .app-dark .text-black { color: #111111 !important; }
+    .app-dark .hover\:bg-black:hover { background-color: #FFFFFF !important; }
+    .app-dark .hover\:text-white:hover { color: #0B0B0C !important; }
+    .app-dark .keep-dark { background-color: #000000 !important; color: #FFE600 !important; }
+    .app-dark input, .app-dark select, .app-dark textarea {
+      background-color: #141416 !important; color: #F4F4F5 !important;
+      border-color: rgba(255,255,255,0.20) !important;
+    }
+    .app-dark input::placeholder, .app-dark textarea::placeholder { color: rgba(255,255,255,0.35) !important; }
+    .app-dark select option { background: #141416; color: #F4F4F5; }
+    .app-dark table thead tr { background-color: rgba(255,255,255,0.06) !important; }
+    .app-dark .shadow-\[0_2px_0_0_\#FFE600\] { box-shadow: 0 2px 0 0 #FFE600 !important; }
+    .app-dark .bg-\[\#FFE600\] { background-color: #FFE600 !important; }
+    .app-dark .text-red-600 { color: #FF8085 !important; }
+    .app-dark .border-red-200 { border-color: rgba(255,128,133,0.35) !important; }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 </head>
 <body class="bg-white text-[#111]">
   <div id="root"></div>
@@ -183,6 +215,96 @@
         footerLeft: "Save for later use", page: "09 / 09", theme: "dark", accent: "#FFE600"
       }
     ], null, 2);
+
+    // ---------- 10 pre-made design templates ----------
+    function makeTemplate(id, name, description, tags, base, slides) {
+      return { id, name, description, tags, slides: slides.map(s => ({ ...base, ...s })) };
+    }
+
+    const TEMPLATES = [
+      makeTemplate("editorial-marker", "Editorial Marker", "Typography-first black and white with a yellow highlighter. The classic educational look.", ["minimal", "yellow", "education"],
+        { theme: "light", accent: "#FFE600", background: "#FFFFFF", textColor: "#111111", mutedColor: "rgba(17,17,17,0.55)", font: "sans", border: true, radius: 0, divider: true },
+        [
+          { kind: "cover", layout: "cover", label: "EDUCATIONAL SERIES 01", headerRight: "01 — 04", headline: "Start small. Stay in control.", headlineEmphasis: "in control", emphasisStyle: "marker", sub: "A system for scaling AI UGC without losing quality.", footerLeft: "SYSTEM 01", page: "01 / 04", pageStyle: "dash", progress: true },
+          { kind: "content", layout: "list", eyebrow: "GETTING STARTED / 02", headline: "Research what already works", headlineEmphasis: "already works", yellow: "Don't guess what to create.", bulletsTitle: "LOOK FOR", bullets: ["Strong hooks", "Winning formats", "Angles that resonate"], bulletStyle: "arrow", calloutTitle: "RULE", calloutBody: "Research what earns attention before you produce anything.", calloutStyle: "rule", calloutIcon: "→", footerLeft: "PROFESSIONAL PUBLISHING - 01", page: "02 / 04", swipe: true, progress: true },
+          { kind: "content", layout: "steps", eyebrow: "WORKFLOW / 03", headline: "Run it in three moves", steps: [{ label: "STEP 01", title: "Choose one task", body: "Start with something low-risk." }, { label: "STEP 02", title: "Check the output", body: "Inspect before expanding." }, { label: "STEP 03", title: "Expand carefully", body: "Only after it proves reliable." }], footerLeft: "ONE TASK AT A TIME", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "NEXT / 04", badge: "FREE", headline: "Want more practical AI UGC strategies?", cta: "DM \"UGC\" for more tips.", ctaSub: "I reply to every DM.", ctaButton: "Save this post", handle: "@yourbrand", swipe: true, footerLeft: "Save for later use", page: "04 / 04" }
+        ]),
+      makeTemplate("midnight-bold", "Midnight Bold", "High-contrast dark slides with lime accents and oversized statements.", ["dark", "bold", "lime"],
+        { theme: "dark", accent: "#D7FF3F", background: "#0B0B0C", textColor: "#FFFFFF", mutedColor: "rgba(255,255,255,0.55)", font: "sans", border: false, radius: 0, divider: true },
+        [
+          { kind: "cover", layout: "cover", label: "BOLD SERIES 02", headerRight: "01 — 04", headline: "Stop posting more. Start posting sharper.", headlineEmphasis: "sharper", emphasisStyle: "underline", underlineText: "Quality compounds.", sub: "For creators who want signal, not noise.", footerLeft: "MIDNIGHT", page: "01 / 04", progress: true },
+          { kind: "content", layout: "stat", eyebrow: "THE PROBLEM / 02", headline: "Volume is not a strategy", stat: "87%", statLabel: "of creators quit in month one", statCaption: "Because they optimize for output, not outcomes.", body: "The fix is a smaller system you can repeat.", footerLeft: "SIGNAL > NOISE", page: "02 / 04", swipe: true },
+          { kind: "content", layout: "list", eyebrow: "THE FIX / 03", headline: "Repeat one format well", yellow: "One format, repeated well, beats ten random posts.", bulletsTitle: "PICK ONE", bullets: ["A hook you can reuse", "A structure you trust", "A payoff you can deliver"], bulletStyle: "dot", calloutTitle: "NOTE", calloutBody: "Consistency is a creative constraint, not a punishment.", calloutStyle: "tip", footerLeft: "SMALLER SYSTEM", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "NEXT / 04", headline: "Build the smaller system.", cta: "Save this and run it for 7 days.", ctaSub: "Then cut what doesn't work.", ctaButton: "Save this post", handle: "@midnight.creator", swipe: true, footerLeft: "RUN IT BACK", page: "04 / 04" }
+        ]),
+      makeTemplate("warm-paper", "Warm Paper", "Cream background, serif type and a rust accent. Calm, editorial and human.", ["serif", "warm", "editorial"],
+        { theme: "light", accent: "#E2542C", background: "#F5EFE6", textColor: "#2A2118", mutedColor: "#7A6A58", font: "serif", border: false, radius: 0, divider: true, grain: true },
+        [
+          { kind: "cover", layout: "cover", label: "FIELD NOTES / 03", headerRight: "01 — 04", headline: "The quiet advantage of doing less.", headlineEmphasis: "doing less", emphasisStyle: "underline", sub: "Notes on attention, craft, and consistency.", footerLeft: "WARM PAPER", page: "01 / 04" },
+          { kind: "content", layout: "quote", eyebrow: "ON CRAFT / 02", headline: "Craft is repetition with attention.", quote: "You do not rise to the level of your goals. You fall to the level of your systems.", quoteAuthor: "James Clear", quoteRole: "Atomic Habits", footerLeft: "FIELD NOTES", page: "02 / 04", swipe: true },
+          { kind: "content", layout: "list", eyebrow: "PRACTICE / 03", headline: "Keep the work repeatable", yellow: "Small enough to finish. Good enough to repeat.", bulletsTitle: "PRACTICE", bullets: ["Write one honest sentence", "Edit for rhythm, not length", "Publish before it feels ready"], bulletStyle: "dash", body: "The goal is not a masterpiece. The goal is a body of work.", footerLeft: "ON CRAFT", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "CLOSING / 04", headline: "Make the next page easy to turn.", cta: "Save this note for your next session.", ctaButton: "Keep this", handle: "@fieldnotes", footerLeft: "WARM PAPER", page: "04 / 04" }
+        ]),
+      makeTemplate("blueprint-mono", "Blueprint Mono", "Technical mono type, cool blue lines and a spec-sheet feel.", ["mono", "blue", "system"],
+        { theme: "light", accent: "#1D6FF2", background: "#F4F7FB", textColor: "#0B2545", mutedColor: "#5B7290", font: "mono", border: true, radius: 0, divider: true },
+        [
+          { kind: "cover", layout: "cover", label: "BLUEPRINT / 04", eyebrow: "SPEC 001", headerRight: "REV A", headline: "Build once. Reuse everywhere.", headlineEmphasis: "Reuse", emphasisStyle: "box", chips: ["system", "workflow", "scale"], sub: "A practical spec for content operations.", footerLeft: "BLUEPRINT 001", page: "01 / 04" },
+          { kind: "content", layout: "checklist", eyebrow: "CHECKLIST / 02", headline: "Ship without the guesswork", body: "Every asset should answer exactly one question.", checklist: ["Name the audience", "Name the problem", "Name the next action"], footerLeft: "QA PASS", page: "02 / 04", swipe: true },
+          { kind: "content", layout: "steps", eyebrow: "LOOP / 03", headline: "Three moves, one loop", steps: [{ label: "01 INPUT", title: "Collect", body: "Save what already works." }, { label: "02 BUILD", title: "Remix", body: "Reuse the structure." }, { label: "03 SHIP", title: "Measure", body: "Keep the signal." }], footerLeft: "LOOP 001", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "RELEASE / 04", badge: "OPEN", headline: "Fork this spec and make it yours.", cta: "Save the spec. Change one variable.", ctaSub: "Then run the loop again.", ctaButton: "Save the spec", handle: "@blueprint.mono", footerLeft: "BLUEPRINT", page: "04 / 04" }
+        ]),
+      makeTemplate("lavender-soft", "Lavender Soft", "Rounded cards, centered type and a gentle violet palette.", ["soft", "pastel", "center"],
+        { theme: "light", accent: "#7C4DFF", background: "#EEE9FF", textColor: "#2B2140", mutedColor: "#6B5E86", font: "sans", align: "center", border: false, radius: 18, divider: true },
+        [
+          { kind: "cover", layout: "cover", label: "SOFT LAUNCH / 05", badge: "NEW", headline: "A calmer way to grow.", headlineEmphasis: "calmer", emphasisStyle: "box", sub: "Less hustle. More repeatable systems.", footerLeft: "LAVENDER", page: "01 / 04" },
+          { kind: "content", layout: "list", eyebrow: "THE METHOD / 02", headline: "Three gentle rules", bulletsTitle: "KEEP IT SIMPLE", bullets: ["One idea per slide", "One action per post", "One metric per week"], bulletStyle: "dot", yellow: "Consistency beats intensity.", footerLeft: "SOFT RULES", page: "02 / 04", swipe: true },
+          { kind: "content", layout: "quote", eyebrow: "REMINDER / 03", headline: "Small steps still count.", quote: "Small steps, taken daily, become the strategy.", quoteAuthor: "Soft Launch", quoteRole: "Field guide", footerLeft: "GO GENTLY", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "BEGIN / 04", headline: "Start with one small promise.", cta: "Save this and keep it close.", ctaButton: "Save", handle: "@softlaunch", footerLeft: "SOFT LAUNCH", page: "04 / 04" }
+        ]),
+      makeTemplate("swiss-red", "Swiss Red", "Hard grid, red accent blocks and one clear idea per slide.", ["swiss", "red", "grid"],
+        { theme: "light", accent: "#E52521", background: "#FFFFFF", textColor: "#0A0A0A", mutedColor: "#6B6B6B", font: "sans", border: true, radius: 0, divider: true },
+        [
+          { kind: "cover", layout: "cover", label: "SWISS SERIES / 06", eyebrow: "DESIGN / 01", headerRight: "01 — 04", headline: "Clarity is a creative act.", headlineEmphasis: "Clarity", emphasisStyle: "box", strikeText: "more noise", sub: "A poster system for ideas that need to land.", footerLeft: "SWISS 01", page: "01 / 04" },
+          { kind: "content", layout: "stat", eyebrow: "THE POINT / 02", headline: "One message per slide", stat: "3×", statLabel: "more recall for one clear message", statCaption: "than five competing ones.", body: "Pick one idea. Remove everything else.", calloutTitle: "WARNING", calloutBody: "If everything is emphasized, nothing is.", calloutStyle: "warning", footerLeft: "ONE IDEA", page: "02 / 04", swipe: true },
+          { kind: "content", layout: "steps", eyebrow: "THE GRID / 03", headline: "Grid first. Type second.", steps: [{ label: "01", title: "Place the idea", body: "One block, one message." }, { label: "02", title: "Set the type", body: "Let scale do the work." }, { label: "03", title: "Cut the rest", body: "Remove until it breaks." }], footerLeft: "GRID SYSTEM", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "END / 04", headline: "Make the idea impossible to miss.", cta: "Use one slide for one idea.", ctaButton: "Save this system", handle: "@swiss.red", footerLeft: "SWISS 04", page: "04 / 04" }
+        ]),
+      makeTemplate("terminal-green", "Terminal Green", "Dark terminal styling with green mono text and a code-log rhythm.", ["terminal", "green", "mono"],
+        { theme: "dark", accent: "#36F28B", background: "#06110B", textColor: "#D7FFE1", mutedColor: "#6E9F81", font: "mono", border: false, radius: 0, divider: true, grain: true },
+        [
+          { kind: "cover", layout: "cover", label: "TERMINAL / 07", eyebrow: "> RUN SYSTEM", headerRight: "v1.0", headline: "Automate the repeatable. Protect the thinking.", headlineEmphasis: "Protect", emphasisStyle: "underline", underlineText: "$ keep_human=true", sub: "A field guide for lean content ops.", footerLeft: "TTY 001", page: "01 / 04", progress: true },
+          { kind: "content", layout: "list", eyebrow: "> CHECK / 02", headline: "Audit before you automate", bulletsTitle: "INPUTS", bullets: ["What repeats every week?", "What needs judgment?", "What can be templated?"], bulletStyle: "arrow", calloutTitle: "WARN", calloutBody: "Never automate a process you don't understand.", calloutStyle: "warning", calloutIcon: "!", footerLeft: "STDOUT", page: "02 / 04", swipe: true },
+          { kind: "content", layout: "steps", eyebrow: "> LOOP / 03", headline: "The loop", steps: [{ label: "01", title: "Capture", body: "Save the input." }, { label: "02", title: "Transform", body: "Run the template." }, { label: "03", title: "Review", body: "Keep the human check." }], footerLeft: "EXIT 0", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "> DONE / 04", badge: "OPEN", headline: "Ship the loop. Not the busywork.", cta: "Copy this system into your workflow.", ctaButton: "Save script", handle: "@terminal.green", footerLeft: "END OF FILE", page: "04 / 04" }
+        ]),
+      makeTemplate("magazine-ivory", "Magazine Ivory", "Centered serif layouts with gold hairlines and generous space.", ["magazine", "serif", "gold"],
+        { theme: "light", accent: "#C9A227", background: "#FBF7EE", textColor: "#14110D", mutedColor: "#6E6553", font: "serif", align: "center", border: true, radius: 0, divider: true },
+        [
+          { kind: "cover", layout: "cover", label: "THE EDIT / 08", headlineLines: ["The art of", "paying attention."], headlineEmphasis: "attention", emphasisStyle: "underline", sub: "A slow read for fast feeds.", footerLeft: "THE EDIT", page: "01 / 04" },
+          { kind: "content", layout: "quote", eyebrow: "ON ATTENTION / 02", headline: "What you notice becomes your work.", quote: "Attention is the beginning of devotion.", quoteAuthor: "Mary Oliver", quoteRole: "Upstream", footerLeft: "THE EDIT", page: "02 / 04", swipe: true },
+          { kind: "content", layout: "list", align: "left", eyebrow: "PRACTICE / 03", headline: "Three ways back to the page", bulletsTitle: "PRACTICE", bullets: ["Read one page without a screen", "Write one sentence by hand", "Notice one thing you usually skip"], bulletStyle: "dash", yellow: "Boredom is often the doorway.", footerLeft: "ON ATTENTION", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "CLOSING / 04", headline: "Read one thing slowly today.", cta: "Save this edit for later.", ctaButton: "Keep the edit", handle: "@the.edit", footerLeft: "THE EDIT", page: "04 / 04" }
+        ]),
+      makeTemplate("coral-pop", "Coral Pop", "Warm coral, rounded corners and playful accents without the clutter.", ["pop", "coral", "playful"],
+        { theme: "light", accent: "#FF5A36", background: "#FFF1EC", textColor: "#281512", mutedColor: "#8A6259", font: "sans", border: false, radius: 14, divider: true },
+        [
+          { kind: "cover", layout: "cover", label: "POP NOTES / 09", badge: "FREE", emoji: " ✦", headline: "Make it useful. Then make it fun.", headlineEmphasis: "fun", emphasisStyle: "marker", sub: "A playful system for serious creators.", footerLeft: "POP NOTES", page: "01 / 04" },
+          { kind: "content", layout: "content", eyebrow: "THE RULES / 02", headline: "Useful beats clever", yellow: "Clarity earns the second slide.", chips: ["hooks", "proof", "payoff"], body: "Give people a reason to keep swiping.", footerLeft: "RULE 01", page: "02 / 04", swipe: true },
+          { kind: "content", layout: "steps", eyebrow: "STRUCTURE / 03", headline: "The 3-beat story", steps: [{ label: "BEAT 01", title: "Hook", body: "Name the tension." }, { label: "BEAT 02", title: "Proof", body: "Show it working." }, { label: "BEAT 03", title: "Payoff", body: "Give the next step." }], footerLeft: "STORY 03", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "STEAL IT / 04", headline: "Steal this structure.", cta: "Save it. Use it. Make it yours.", ctaButton: "Save this post", handle: "@coral.pop", footerLeft: "POP NOTES", page: "04 / 04" }
+        ]),
+      makeTemplate("noir-gold", "Noir Gold", "Near-black slides, serif type and restrained gold detailing.", ["noir", "gold", "luxury"],
+        { theme: "dark", accent: "#D4AF37", background: "#0E0D0B", textColor: "#F5F0E6", mutedColor: "#9A8F7A", font: "serif", border: false, radius: 0, divider: true, grain: true },
+        [
+          { kind: "cover", layout: "cover", label: "NOIR / 10", headerRight: "01 — 04", headline: "Luxury is the absence of noise.", headlineEmphasis: "absence", emphasisStyle: "box", sub: "A quieter approach to building an audience.", footerLeft: "NOIR NOTES", page: "01 / 04" },
+          { kind: "content", layout: "quote", eyebrow: "ON TASTE / 02", headline: "Taste can be trained.", quote: "Taste is just attention, practiced in public.", quoteAuthor: "The Studio", quoteRole: "Noir Notes", footerLeft: "NOIR NOTES", page: "02 / 04", swipe: true },
+          { kind: "content", layout: "list", eyebrow: "THE EDIT / 03", headline: "The discipline of leaving things out", bulletsTitle: "EDIT", bullets: ["Remove one decoration", "Remove one claim", "Remove one slide"], bulletStyle: "dash", yellow: "Remove one thing before you publish.", body: "Restraint is what makes the remaining idea feel expensive.", footerLeft: "NOIR NOTES", page: "03 / 04", swipe: true },
+          { kind: "cta", layout: "cta", eyebrow: "CLOSING / 04", headline: "Build something worth keeping.", cta: "Save this for your next edit.", ctaButton: "Keep this note", handle: "@noir.gold", footerLeft: "NOIR NOTES", page: "04 / 04" }
+        ])
+    ];
+
+
     function parseSlidesText(text) {
       const slideRegex = /\*\*Slide\s+(\d+)\s*[—–\-]\s*(.+?)\*\*/g;
       const matches = [...text.matchAll(slideRegex)];
@@ -278,7 +400,7 @@
     ]);
 
     // ---------- Storage (localStorage) ----------
-    const LS = { accounts: "cd_accounts", carousels: "cd_carousels", settings: "cd_settings", sb: "cd_supabase_config" };
+    const LS = { accounts: "cd_accounts", carousels: "cd_carousels", theme: "cd_theme" };
     const load = (k) => { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch { return []; } };
     const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
@@ -293,63 +415,9 @@
       saveCarousel: (c) => { const all = load(LS.carousels); const i = all.findIndex(x=>x.id===c.id); if(i>=0) all[i]=c; else all.unshift(c); save(LS.carousels, all); },
       deleteCarousel: (id) => save(LS.carousels, load(LS.carousels).filter(c=>c.id!==id)),
 
-      getSettings: () => { const all = load(LS.settings); return all[0] || { aiProvider: "openai", aiApiKey: "" }; },
-      saveSettings: (s) => save(LS.settings, [s]),
-      getSb: () => { try { return JSON.parse(localStorage.getItem(LS.sb) || "null"); } catch { return null; } },
-      setSb: (c) => { if (c) localStorage.setItem(LS.sb, JSON.stringify(c)); else localStorage.removeItem(LS.sb); },
+      getTheme: () => localStorage.getItem(LS.theme) || "light",
+      saveTheme: (t) => localStorage.setItem(LS.theme, t),
     };
-
-    function parseJsonLoose(text) {
-      let t = String(text || "").trim().replace(/```json/gi, "").replace(/```/g, "").trim();
-      try { return JSON.parse(t); } catch (e) {}
-      const start = t.indexOf("{");
-      const end = t.lastIndexOf("}");
-      if (start >= 0 && end > start) {
-        const sliced = t.slice(start, end + 1);
-        try { return JSON.parse(sliced); } catch (e) {}
-      }
-      throw new Error("AI returned invalid JSON. Try again, or use Parse (smart).");
-    }
-
-    function aiErrorMessage(e) {
-      const m = e && e.message ? e.message : "";
-      if (/Failed to fetch|NetworkError|Load failed|Network request failed/i.test(m)) {
-        return "Network blocked: the browser could not reach the AI provider. Some providers block direct calls from local files. Use Parse (smart) instead — it works fully offline.";
-      }
-      return m || "Request failed";
-    }
-
-    // ---------- AI generation ----------
-    async function generateCarousel(topic, designPrompt, provider, apiKey) {
-      const system = `You are a social media carousel content writer. Output ONLY valid JSON. Shape: {"title":"...","slides":[{"kind":"cover","layout":"cover","label":"EDUCATIONAL SERIES 01","headline":"...","sub":"...","page":"01 / 07","footerLeft":"..."},{"kind":"content","layout":"list","number":"01 / 06","headline":"...","headlineEmphasis":"key phrase","yellow":"key insight","bullets":["a","b","c"],"calloutTitle":"RULE","calloutBody":"...","page":"02 / 07","footerLeft":"..."},...{"kind":"cta","layout":"cta","number":"06 / 06 + NEXT","headline":"...","cta":"DM \\"WORD\\" for more","ctaButton":"Save this post","page":"07 / 07","footerLeft":"..."}]}. Exactly 7 slides: 1 cover + 5 content + 1 cta. Headlines as outcomes. Bullets as executable actions. Optional fields you may use: layout, eyebrow, headerRight, headlineLines, headlineEmphasis, emphasisStyle, sub, lead, body, badge, pill, tags, chips, bulletsTitle, bulletStyle, checklist, steps, quote, quoteAuthor, stat, statLabel, calloutTitle, calloutBody, cta, ctaSub, ctaButton, handle, swipe, series. Never use fields outside this list.`;
-      const userMsg = `Topic: ${topic}\nDesign/style: ${designPrompt || "Minimal educational."}\nGenerate now.`;
-      let text = "";
-      const isOpenAICompat = provider === "openai" || provider === "groq";
-      if (isOpenAICompat) {
-        const base = provider === "groq" ? "https://api.groq.com/openai/v1" : "https://api.openai.com/v1";
-        const model = provider === "groq" ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
-        const res = await fetch(`${base}/chat/completions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify({ model, messages: [{role:"system",content:system},{role:"user",content:userMsg}], temperature: 0.7 }),
-        });
-        if (!res.ok) throw new Error(`${provider} ${res.status}: ${await res.text()}`);
-        const j = await res.json();
-        text = j.choices?.[0]?.message?.content || "";
-      } else {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-          body: JSON.stringify({ model: "claude-3-5-haiku-latest", max_tokens: 2000, system, messages: [{role:"user",content:userMsg}] }),
-        });
-        if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
-        const j = await res.json();
-        text = j.content?.[0]?.text || "";
-      }
-      const parsed = parseJsonLoose(text);
-      const slides = (parsed.slides || []).map(s => ({ ...s, kind: s.kind || "content" }));
-      return { title: parsed.title || topic, slides };
-    }
 
     // ---------- SlideView ----------
     function emphasisNodes(text, slide, accent) {
@@ -668,19 +736,22 @@
     }
 
     // ---------- Nav ----------
-    function Nav({ route, setRoute }) {
-      const links = [{id:"home",label:"Dashboard"},{id:"calendar",label:"Calendar"},{id:"carousels",label:"Carousels"},{id:"accounts",label:"Accounts"},{id:"settings",label:"Settings"}];
+    function Nav({ route, setRoute, darkUI, onToggleDark }) {
+      const links = [{id:"home",label:"Dashboard"},{id:"templates",label:"Templates"},{id:"calendar",label:"Calendar"},{id:"carousels",label:"Carousels"},{id:"accounts",label:"Accounts"},{id:"settings",label:"Settings"}];
       return (
         <nav className="border-b border-black/10 bg-white sticky top-0 z-20">
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
-            <button onClick={() => setRoute("home")} className="font-extrabold tracking-tight text-lg">Carousel<span className="text-[#FFE600] bg-black px-1 ml-1 rounded">DB</span></button>
+            <button onClick={() => setRoute("home")} className="font-extrabold tracking-tight text-lg">Carousel<span className="text-[#FFE600] bg-black px-1 ml-1 rounded keep-dark">DB</span></button>
             <div className="flex items-center gap-1 flex-wrap">
               {links.map(l => (
                 <button key={l.id} onClick={() => setRoute(l.id)} className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${route===l.id ? "bg-black text-white" : "hover:bg-black/5"}`}>{l.label}</button>
               ))}
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs opacity-50 hidden md:inline">local@local</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs opacity-50 hidden lg:inline">local@local</span>
+              <button onClick={onToggleDark} title="Toggle dashboard theme" className="text-sm px-3 py-1.5 rounded-full border border-black/15 hover:bg-black/5 inline-flex items-center gap-1.5">
+                <span aria-hidden>{darkUI ? "☀" : "☾"}</span>{darkUI ? "Light" : "Dark"}
+              </button>
             </div>
           </div>
         </nav>
@@ -691,10 +762,18 @@
     function App() {
       const [route, setRoute] = useState("home");
       const [params, setParams] = useState({});
+      const [darkUI, setDarkUI] = useState(() => storage.getTheme() === "dark");
       const nav = (r, p = {}) => { setRoute(r); setParams(p); };
+
+      useEffect(() => {
+        storage.saveTheme(darkUI ? "dark" : "light");
+        document.body.classList.toggle("dark-ui", darkUI);
+        document.documentElement.style.colorScheme = darkUI ? "dark" : "light";
+      }, [darkUI]);
 
       let page = null;
       if (route === "home") page = <Home nav={nav} />;
+      else if (route === "templates") page = <TemplatesPage nav={nav} />;
       else if (route === "calendar") page = <CalendarPage nav={nav} />;
       else if (route === "carousels") page = <CarouselsPage nav={nav} />;
       else if (route === "carousels-new") page = <CarouselNew nav={nav} />;
@@ -705,8 +784,8 @@
       else if (route === "settings") page = <SettingsPage nav={nav} />;
 
       return (
-        <div className="min-h-screen bg-white">
-          <Nav route={route} setRoute={(r) => nav(r)} />
+        <div className={`min-h-screen bg-white ${darkUI ? "app-dark" : ""}`}>
+          <Nav route={route} setRoute={(r) => nav(r)} darkUI={darkUI} onToggleDark={() => setDarkUI(v => !v)} />
           {page}
         </div>
       );
@@ -726,11 +805,18 @@
             </div>
             <button onClick={() => nav("carousels-new")} className="bg-black text-white rounded-full px-5 h-10 inline-flex items-center text-sm font-semibold hover:bg-black/80">+ New Carousel</button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
             <Stat label="Carousels" value={carousels.length} />
             <Stat label="Accounts" value={accounts.length} />
             <Stat label="Scheduled" value={carousels.filter(c=>c.status==="scheduled").length} />
             <Stat label="Done" value={carousels.filter(c=>c.status==="done").length} />
+          </div>
+          <div className="border border-black/10 rounded-xl p-4 mb-8 flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <div className="font-bold">10 pre-made design templates</div>
+              <p className="text-xs opacity-60">Preview each design, inspect the exact slide JSON, or start a carousel in one click.</p>
+            </div>
+            <button onClick={() => nav("templates")} className="rounded-full px-5 h-10 text-sm font-semibold border border-black/15 hover:bg-black/5">Browse templates</button>
           </div>
           <h2 className="text-lg font-bold mb-3">Upcoming</h2>
           {upcoming.length === 0 && <p className="text-sm opacity-50">No upcoming carousels. Create one.</p>}
@@ -811,6 +897,92 @@
       );
     }
 
+    // ---------- Templates ----------
+    function TemplatesPage({ nav }) {
+      const [openId, setOpenId] = useState(null);
+      const [msg, setMsg] = useState(null);
+      const accounts = storage.listAccounts();
+
+      function flash(text) { setMsg(text); setTimeout(() => setMsg(null), 3500); }
+
+      function useTemplate(t) {
+        const now = new Date().toISOString();
+        const c = {
+          id: uid(), accountId: accounts[0]?.id || "", title: `${t.name} Carousel`,
+          scheduledDate: new Date().toISOString().slice(0, 10), status: "draft",
+          slides: JSON.parse(JSON.stringify(t.slides)), createdAt: now, updatedAt: now
+        };
+        storage.saveCarousel(c);
+        nav("carousels-view", { id: c.id });
+      }
+
+      function copyJson(t) {
+        const json = JSON.stringify(t.slides, null, 2);
+        const done = () => flash(`${t.name}: slides JSON copied.`);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(json).then(done).catch(fallback);
+        } else { fallback(); }
+        function fallback() {
+          const ta = document.createElement("textarea");
+          ta.value = json; ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand("copy"); done(); } catch { flash("Copy failed — open the JSON and select it manually."); }
+          document.body.removeChild(ta);
+        }
+      }
+
+      return (
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          <div className="flex items-end justify-between gap-3 flex-wrap mb-6">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">Templates</h1>
+              <p className="text-sm opacity-60">10 pre-made designs. Preview the slides, inspect the exact JSON, or create a carousel in one click.</p>
+            </div>
+            <button onClick={() => nav("carousels-new")} className="bg-black text-white rounded-full px-5 h-10 inline-flex items-center text-sm font-semibold hover:bg-black/80">+ New Carousel</button>
+          </div>
+          {msg && <div className="text-xs font-medium bg-[#FFE600] text-[#111] px-3 py-2 rounded-full inline-block mb-4">{msg}</div>}
+
+          <div className="grid lg:grid-cols-2 gap-5">
+            {TEMPLATES.map((t) => (
+              <section key={t.id} className="border border-black/10 rounded-xl p-4 overflow-hidden">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-bold leading-tight">{t.name}</h2>
+                    <p className="text-xs opacity-60 mt-1 max-w-md">{t.description}</p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-black/5 rounded-full px-2.5 py-1 whitespace-nowrap">{t.slides.length} slides</span>
+                </div>
+                <div className="flex gap-1.5 mt-2 flex-wrap">
+                  {t.tags.map(tag => <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full border border-black/15 opacity-70">{tag}</span>)}
+                </div>
+
+                <div className="flex gap-3 mt-3 bg-black/5 rounded-lg p-3 overflow-x-auto no-scrollbar">
+                  {t.slides.slice(0, 2).map((s, i) => (
+                    <div key={i} style={{ width: 168, height: 210, flexShrink: 0, overflow: "hidden", borderRadius: 4, boxShadow: "0 1px 4px rgba(0,0,0,0.12)" }}>
+                      <div style={{ width: 400, height: 500, transform: "scale(0.42)", transformOrigin: "top left" }}>
+                        <SlideView slide={s} index={i} design="minimal" accent={s.accent || "#FFE600"} total={t.slides.length} />
+                      </div>
+                    </div>
+                  ))}
+                  <div className="self-center text-[10px] opacity-50 pl-1">Preview of 2 of {t.slides.length} slides</div>
+                </div>
+
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  <button onClick={() => useTemplate(t)} className="bg-black text-white rounded-full px-4 h-9 text-xs font-semibold hover:bg-black/80">Use template</button>
+                  <button onClick={() => setOpenId(openId === t.id ? null : t.id)} className="rounded-full px-4 h-9 text-xs font-semibold border border-black/15 hover:bg-black/5">{openId === t.id ? "Hide JSON" : "View JSON"}</button>
+                  <button onClick={() => copyJson(t)} className="rounded-full px-4 h-9 text-xs font-semibold border border-black/15 hover:bg-black/5">Copy JSON</button>
+                </div>
+
+                {openId === t.id && (
+                  <pre className="mt-3 text-[10px] leading-relaxed bg-black/5 rounded-lg p-3 max-h-80 overflow-auto font-mono">{JSON.stringify(t.slides, null, 2)}</pre>
+                )}
+              </section>
+            ))}
+          </div>
+        </main>
+      );
+    }
+
     // ---------- Carousel new ----------
     function CarouselNew({ nav }) {
       const accounts = storage.listAccounts();
@@ -822,27 +994,7 @@
       const [slidesJson, setSlidesJson] = useState(JSON.stringify(defaultSlides(), null, 2));
       const [mode, setMode] = useState("form");
       const [rawText, setRawText] = useState("");
-      const [topic, setTopic] = useState("");
-      const [genBusy, setGenBusy] = useState(false);
-      const [genErr, setGenErr] = useState(null);
       const [parseMsg, setParseMsg] = useState(null);
-
-      async function handleGenerate() {
-        if (!topic.trim()) return;
-        setGenBusy(true); setGenErr(null);
-        try {
-          const settings = storage.getSettings();
-          const provider = settings.aiProvider || "openai";
-          const apiKey = settings.aiApiKey || "";
-          if (!apiKey) throw new Error("No AI API key set. Go to Settings first.");
-          const acc = accounts.find(a => a.id === accountId);
-          const res = await generateCarousel(topic, acc?.prompt, provider, apiKey);
-          setSlides(res.slides);
-          setSlidesJson(JSON.stringify(res.slides, null, 2));
-          if (!title) setTitle(res.title);
-        } catch (e) { setGenErr(aiErrorMessage(e)); }
-        finally { setGenBusy(false); }
-      }
 
       function handleParse() {
         const parsed = parseSlidesText(rawText);
@@ -852,41 +1004,6 @@
         setMode("json");
         setParseMsg(`Parsed ${parsed.length} slides. Review in JSON mode.`);
         setTimeout(() => setParseMsg(null), 4000);
-      }
-      async function handleAIConvert() {
-        if (!rawText.trim()) return;
-        setGenBusy(true); setGenErr(null);
-        try {
-          const settings = storage.getSettings();
-          const provider = settings.aiProvider || "openai";
-          const apiKey = settings.aiApiKey || "";
-          if (!apiKey) throw new Error("No AI API key set. Go to Settings first.");
-          const acc = accounts.find(a => a.id === accountId);
-          const prompt = `Convert the following raw carousel text into the slide JSON schema. Output ONLY valid JSON with {"title":"...","slides":[...]}. Each slide: kind (cover/content/cta), layout, headline, headlineEmphasis, sub, lead, body, yellow, bullets, checklist, steps, quote, stat, calloutTitle, calloutBody, cta, ctaButton, page, footerLeft, label/number as appropriate. Keep the author's wording; do not invent facts. 7-9 slides.\n\nRaw text:\n${rawText}\n\nDesign style: ${acc?.prompt || "Minimal educational."}`;
-          const system = "You convert raw carousel text into structured slide JSON. Output only valid JSON.";
-          let text = "";
-          const isOpenAICompat = provider === "openai" || provider === "groq";
-          if (isOpenAICompat) {
-            const base = provider === "groq" ? "https://api.groq.com/openai/v1" : "https://api.openai.com/v1";
-            const model = provider === "groq" ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
-            const res = await fetch(`${base}/chat/completions`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }, body: JSON.stringify({ model, messages: [{role:"system",content:system},{role:"user",content:prompt}], temperature: 0.5 }) });
-            if (!res.ok) throw new Error(`${provider} ${res.status}`);
-            const j = await res.json(); text = j.choices?.[0]?.message?.content || "";
-          } else {
-            const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }, body: JSON.stringify({ model: "claude-3-5-haiku-latest", max_tokens: 3000, system, messages: [{role:"user",content:prompt}] }) });
-            if (!res.ok) throw new Error(`Anthropic ${res.status}`);
-            const j = await res.json(); text = j.content?.[0]?.text || "";
-          }
-          const parsed = parseJsonLoose(text);
-          const slides = (parsed.slides || []).map(s => ({ ...s, kind: s.kind || "content" }));
-          setSlides(slides);
-          setSlidesJson(JSON.stringify(slides, null, 2));
-          setMode("json");
-          if (parsed.title && !title) setTitle(parsed.title);
-          setParseMsg(`AI converted ${slides.length} slides. Review in JSON mode.`);
-          setTimeout(() => setParseMsg(null), 4000);
-        } catch (e) { setGenErr(aiErrorMessage(e)); }
-        finally { setGenBusy(false); }
       }
 
       function submit(e) {
@@ -928,24 +1045,15 @@
                   </Field>
                   <div className="flex gap-2 flex-wrap">
                     <button type="button" onClick={handleParse} className="bg-black text-white rounded-full h-9 px-4 text-sm font-semibold hover:bg-black/80">Parse (smart)</button>
-                    <button type="button" onClick={handleAIConvert} disabled={genBusy} className="bg-[#FFE600] text-black rounded-full h-9 px-4 text-sm font-semibold hover:bg-[#ffd700] disabled:opacity-60">{genBusy ? "Converting..." : "Convert with AI"}</button>
                   </div>
                   {parseMsg && <div className="text-sm text-green-600">{parseMsg}</div>}
-                  {genErr && <div className="text-red-600 text-xs">{genErr}</div>}
-                  <p className="text-xs opacity-50">"Parse (smart)" converts instantly without AI. "Convert with AI" uses your API key for better accuracy.</p>
+                  <p className="text-xs opacity-50">Paste your text, then Parse (smart). It converts instantly and works fully offline.</p>
                 </>
               )}
               {mode === "json" && <Field label="Slides JSON"><textarea value={slidesJson} onChange={e=>setSlidesJson(e.target.value)} rows={18} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full font-mono" /></Field>}
               <button className="bg-black text-white rounded-full h-10 font-semibold text-sm hover:bg-black/80">Save Carousel</button>
             </form>
             <div className="flex flex-col gap-4">
-              <div className="border border-black/10 rounded-xl p-4">
-                <h3 className="font-bold mb-2">Generate with AI</h3>
-                <input value={topic} onChange={e=>setTopic(e.target.value)} placeholder="Topic, e.g. How to retain what you learn" className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full mb-3" />
-                <button onClick={handleGenerate} disabled={genBusy} className="bg-[#FFE600] text-black rounded-full h-10 px-5 font-semibold text-sm hover:bg-[#ffd700] disabled:opacity-60">{genBusy ? "Generating..." : "Generate slides"}</button>
-                {genErr && <div className="text-red-600 text-xs mt-2">{genErr}</div>}
-                <p className="text-xs opacity-50 mt-2">Uses API key from Settings. Fills slides (and title).</p>
-              </div>
               <div className="border border-black/10 rounded-xl p-4">
                 <h3 className="font-bold mb-2">Preview</h3>
                 <div className="flex gap-2 overflow-x-auto pb-2">
@@ -1097,13 +1205,6 @@
 
     // ---------- Settings ----------
     function SettingsPage({ nav }) {
-      const settings = storage.getSettings();
-      const [provider, setProvider] = useState(settings.aiProvider || "groq");
-      const [key, setKey] = useState(settings.aiApiKey || "");
-      const sb = storage.getSb();
-      const [sbUrl, setSbUrl] = useState(sb?.url || "");
-      const [sbKey, setSbKey] = useState(sb?.anonKey || "");
-      const [msg, setMsg] = useState(null);
       const [copyMsg, setCopyMsg] = useState(null);
       function copySample() {
         const done = () => { setCopyMsg("Example JSON copied. Paste it into the slides JSON editor."); setTimeout(() => setCopyMsg(null), 4000); };
@@ -1118,39 +1219,18 @@
           navigator.clipboard.writeText(SAMPLE_JSON).then(done).catch(fallbackCopy);
         } else { fallbackCopy(); }
       }
-      function save(e) {
-        e.preventDefault();
-        storage.saveSettings({ aiProvider: provider, aiApiKey: key });
-        storage.setSb(sbUrl && sbKey ? { url: sbUrl.trim(), anonKey: sbKey.trim() } : null);
-        setMsg("Saved.");
-        setTimeout(() => setMsg(null), 3000);
-      }
       return (
-        <main className="max-w-2xl mx-auto px-4 py-8">
-          <h1 className="text-3xl font-extrabold tracking-tight mb-6">Settings</h1>
-          <form onSubmit={save} className="flex flex-col gap-4">
-            <fieldset className="border border-black/10 rounded-xl p-4 flex flex-col gap-3">
-              <legend className="text-xs uppercase tracking-wider opacity-60 px-2">Supabase (optional, for sync)</legend>
-              <Field label="Supabase URL"><input value={sbUrl} onChange={e=>setSbUrl(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" placeholder="https://xxxx.supabase.co" /></Field>
-              <Field label="Supabase anon key"><input value={sbKey} onChange={e=>setSbKey(e.target.value)} type="password" className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" placeholder="eyJ..." /></Field>
-              <p className="text-xs opacity-50">Leave blank for local-only mode. Get these from Supabase → Project Settings → API.</p>
-            </fieldset>
-            <fieldset className="border border-black/10 rounded-xl p-4 flex flex-col gap-3">
-              <legend className="text-xs uppercase tracking-wider opacity-60 px-2">AI generation</legend>
-              <Field label="AI provider">
-                <select value={provider} onChange={e=>setProvider(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full">
-                  <option value="groq">Groq (llama-3.3-70b) — fast & free tier</option>
-                  <option value="openai">OpenAI (gpt-4o-mini)</option>
-                  <option value="anthropic">Anthropic (claude-3-5-haiku)</option>
-                </select>
-              </Field>
-              <Field label="API key"><input value={key} onChange={e=>setKey(e.target.value)} type="password" className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full" placeholder="sk-..." /></Field>
-            </fieldset>
-            <button className="bg-black text-white rounded-full h-10 font-semibold text-sm hover:bg-black/80">Save</button>
-            {msg && <div className="text-sm text-green-600">{msg}</div>}
-          </form>
+        <main className="max-w-5xl mx-auto px-4 py-8">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-2">Settings</h1>
+          <p className="text-sm opacity-60 mb-6">Local-only workspace. Everything is stored in this browser — no accounts, no server, no API keys.</p>
 
-          <section className="mt-8 border border-black/10 rounded-xl p-4">
+          <div className="border border-black/10 rounded-xl p-4 mb-6 grid sm:grid-cols-3 gap-3 text-xs">
+            <div><div className="font-bold mb-1">Storage</div><div className="opacity-60">Browser localStorage</div></div>
+            <div><div className="font-bold mb-1">Conversion</div><div className="opacity-60">Parse (smart), fully offline</div></div>
+            <div><div className="font-bold mb-1">Look</div><div className="opacity-60">Toggle Dark / Light in the top bar</div></div>
+          </div>
+
+          <section className="border border-black/10 rounded-xl p-4">
             <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
               <div>
                 <h2 className="text-lg font-bold">Slide JSON Field Reference</h2>
@@ -1186,7 +1266,7 @@
 
             <h3 className="text-sm font-bold mt-6 mb-2">Design prompt (how it works)</h3>
             <p className="text-xs opacity-70 leading-relaxed">
-              The "Design prompt" on an Account is a free-text description of the visual style & tone for that account (e.g. "Minimal educational, typography-first, black/white/yellow, short punchy headlines"). It is passed to the AI when generating or converting slides, so the AI matches your brand voice. It does NOT change the rendered design — the visual look comes from the Account's Design dropdown, accent color, and any per-slide style fields above (theme, accent, background, font, align, border, radius...). To make a different look permanent, create a new Account.
+              The "Design prompt" on an Account is a free-text note describing the visual style and tone for that account (e.g. "Minimal educational, typography-first, black/white/yellow"). It is stored with the account as a reference for you — it does not affect rendering. The visual look comes from the Account's Design dropdown, accent color, and any per-slide style fields above (theme, accent, background, font, align, border, radius...). To make a different look permanent, create a new Account.
             </p>
             <h3 className="text-sm font-bold mt-4 mb-2">Tips</h3>
             <ul className="text-xs opacity-70 leading-relaxed list-disc pl-5 space-y-1">
