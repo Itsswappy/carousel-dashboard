@@ -31,8 +31,160 @@
       { id: "minimal", name: "Minimal Educational (black/white/yellow)" },
       { id: "bold", name: "Bold Dark (inverted)" },
     ];
+
+    const pad2 = (n) => String(n).padStart(2, "0");
+
+    // ---------- Slide schema reference (86 fields) ----------
+    const FIELD_GROUPS = [
+      {
+        group: "Core content",
+        fields: [
+          ["kind", "string", "all", "\"cover\" | \"content\" | \"cta\". Sets default layout and styling."],
+          ["layout", "string", "all", "\"cover\", \"content\", \"list\", \"steps\", \"quote\", \"stat\", \"split\", \"checklist\", \"callout\", \"cta\"."],
+          ["eyebrow", "string", "all", "Small kicker above the headline. e.g. \"GETTING STARTED / 06\"."],
+          ["label", "string", "cover", "Top label, replaces eyebrow on covers. e.g. \"EDUCATIONAL SERIES 01\"."],
+          ["number", "string", "content/cta", "Step number shown when there is no eyebrow. e.g. \"01 / 06\"."],
+          ["headerRight", "string", "all", "Top-right metadata. e.g. \"06 — 07\"."],
+          ["headline", "string", "all", "Main title. Frame as an outcome."],
+          ["headlineLines", "string[]", "all", "Manual line breaks for the headline, overrides headline. e.g. [\"Start small.\",\"Stay in control.\"]."],
+          ["headlineEmphasis", "string", "all", "Word/phrase inside the headline to highlight. e.g. \"in control\"."],
+          ["emphasisStyle", "string", "all", "\"marker\" (highlighter), \"underline\", \"box\", \"none\"."],
+          ["emphasisColor", "string", "all", "Highlight color. Defaults to accent. e.g. \"#FFE600\"."],
+          ["underlineText", "string", "all", "Short handwritten-style note under the headline, drawn with an accent underline."],
+          ["strikeText", "string", "all", "A muted, struck-through line under the headline. e.g. \"post more\"."],
+          ["sub", "string", "cover", "Subtitle under the headline on a cover."],
+          ["lead", "string", "all", "Larger intro paragraph shown after the headline."],
+          ["body", "string", "all", "Main paragraph. e.g. \"Do not hand an agent your whole workflow on day one.\""],
+          ["yellow", "string", "content/cta", "Key insight highlight strip (accent colored)."],
+          ["badge", "string", "all", "Small filled badge above the headline. e.g. \"NEW\"."],
+          ["pill", "string", "all", "Outlined pill above the headline. e.g. \"5 MIN READ\"."],
+          ["tags", "string[]", "all", "Inline hashtag-style tags under the content. e.g. [\"#ai\",\"#ugc\"]."],
+          ["chips", "string[]", "all", "Rounded chips under the content. e.g. [\"Hooks\",\"CTAs\"]."],
+          ["bullets", "string[]", "content/cta", "Executable action bullets."],
+          ["bulletsTitle", "string", "content/cta", "Tiny heading above the bullet list. e.g. \"LOOK FOR\"."],
+          ["bulletStyle", "string", "content/cta", "\"arrow\", \"dot\", \"number\", \"check\", \"dash\", \"none\"."],
+          ["checklist", "string[]", "content/cta", "Items rendered with checkboxes."],
+          ["steps", "object[]", "all", "3-column step blocks: [{label,title,body}]. e.g. [{label:\"STEP 01\",title:\"Choose one task\"}]."],
+          ["quote", "string", "all", "Pull quote shown in large serif type."],
+          ["quoteAuthor", "string", "all", "Quote attribution. e.g. \"Maxwell Maltz\"."],
+          ["quoteRole", "string", "all", "Attribution role. e.g. \"Author, Psycho-Cybernetics\"."],
+          ["stat", "string", "all", "Large number/metric. e.g. \"87%\"."],
+          ["statLabel", "string", "all", "Caption under the stat. e.g. \"of creators quit in month 1\"."],
+          ["statCaption", "string", "all", "Smaller supporting line under the stat label."],
+          ["calloutTitle", "string", "all", "Boxed callout title. e.g. \"SAFETY RULE\"."],
+          ["calloutBody", "string", "all", "Boxed callout body text."],
+          ["calloutStyle", "string", "all", "\"note\", \"tip\", \"warning\", \"rule\". Controls the accent color of the callout."],
+          ["calloutIcon", "string", "all", "Emoji or short glyph shown before the callout title."],
+          ["note", "string", "all", "Small muted note paragraph."],
+          ["footnote", "string", "all", "Tiny legal/source footnote at the bottom of the content."],
+          ["disclaimer", "string", "all", "Tiny disclaimer line above the footer rule."],
+        ],
+      },
+      {
+        group: "Media",
+        fields: [
+          ["image", "string", "all", "Image URL (https or data URI) used by the layout."],
+          ["imageAlt", "string", "all", "Alt text for the image (used in exports/accessibility)."],
+          ["imageCaption", "string", "all", "Caption under the image."],
+          ["imagePosition", "string", "all", "\"top\", \"bottom\", \"left\", \"right\", \"background\"."],
+          ["imageFit", "string", "all", "\"cover\" or \"contain\"."],
+          ["imageOverlay", "number", "all", "0–1 dark overlay over a background image. e.g. 0.45."],
+          ["backgroundImage", "string", "all", "Full-bleed background image URL (behind all content)."],
+          ["logo", "string", "all", "Small logo image URL shown in the header."],
+          ["icon", "string", "all", "Emoji/glyph shown above the headline. e.g. \"∞\"."],
+          ["emoji", "string", "all", "Emoji appended to the headline. e.g. \"🔥\"."],
+        ],
+      },
+      {
+        group: "CTA & social",
+        fields: [
+          ["cta", "string", "cta", "Main call-to-action sentence. e.g. \"DM \\\"UGC\\\" for more tips.\""],
+          ["ctaSub", "string", "cta", "Supporting line under the CTA."],
+          ["ctaButton", "string", "cta", "Button label rendered as a pill. e.g. \"Save this post\"."],
+          ["ctaUrl", "string", "cta", "URL for the CTA button (printed in exports)."],
+          ["handle", "string", "all", "Social handle shown under the CTA. e.g. \"@yourbrand\"."],
+          ["swipe", "boolean", "content", "Show a SWIPE prompt on the slide."],
+          ["swipeText", "string", "content", "Custom swipe text. e.g. \"SWIPE →\"."],
+        ],
+      },
+      {
+        group: "Header, footer & pagination",
+        fields: [
+          ["page", "string", "all", "Page number text. e.g. \"02 / 07\"."],
+          ["pageStyle", "string", "all", "\"plain\", \"slash\", \"dash\", \"dots\". Auto-formats the page number."],
+          ["footerLeft", "string", "all", "Footer metadata left. e.g. \"ONE TASK AT A TIME\"."],
+          ["footerCenter", "string", "all", "Footer metadata center."],
+          ["footerRight", "string", "all", "Footer metadata right (defaults to page)."],
+          ["progress", "boolean", "all", "Show a progress bar along the bottom edge."],
+          ["progressStyle", "string", "all", "\"bar\" or \"dots\"."],
+          ["watermark", "boolean", "all", "Show the giant faint slide number in the corner (default true)."],
+          ["cornerLabel", "string", "all", "Small accent label pinned to the top-right corner."],
+          ["series", "string", "all", "Series name shown in the footer. e.g. \"SYSTEM 01\"."],
+          ["hideHeader", "boolean", "all", "Hide the top label row."],
+          ["hideFooter", "boolean", "all", "Hide the footer, rule and swipe prompt."],
+        ],
+      },
+      {
+        group: "Theme & styling",
+        fields: [
+          ["theme", "string", "all", "\"light\", \"dark\", \"accent\". Overrides the account design."],
+          ["accent", "string", "all", "Accent color for this slide. e.g. \"#FFE600\"."],
+          ["background", "string", "all", "Slide background color. e.g. \"#EFEFEF\"."],
+          ["textColor", "string", "all", "Main text color. e.g. \"#111111\"."],
+          ["mutedColor", "string", "all", "Secondary text color."],
+          ["font", "string", "all", "\"sans\", \"serif\", \"mono\"."],
+          ["serif", "boolean", "all", "Shortcut for font: \"serif\"."],
+          ["align", "string", "all", "\"left\" or \"center\"."],
+          ["textCase", "string", "all", "\"normal\" or \"upper\" — uppercases eyebrows, badges and footer."],
+          ["letterSpacing", "string", "all", "Headline letter spacing. e.g. \"-0.03em\"."],
+          ["lineHeight", "number", "all", "Headline line height. e.g. 0.95."],
+          ["maxWidth", "string", "all", "Max width of the headline. e.g. \"92%\"."],
+          ["border", "boolean", "all", "Draw the outer slide border (default true)."],
+          ["radius", "number", "all", "Corner radius in px. e.g. 0 or 12."],
+          ["divider", "boolean", "all", "Show the rule above the footer (default true)."],
+          ["grain", "boolean", "all", "Add a subtle paper-grain texture."],
+          ["overlayOpacity", "number", "all", "0–1 tint over background color/image."],
+        ],
+      },
+    ];
+
+    const FIELD_COUNT = FIELD_GROUPS.reduce((n, g) => n + g.fields.length, 0);
+
+    const SAMPLE_JSON = JSON.stringify([
+      {
+        kind: "cover", layout: "cover", label: "EDUCATIONAL SERIES 01", headerRight: "01 — 09",
+        headline: "Start small. Stay in control.", headlineEmphasis: "in control", emphasisStyle: "marker",
+        sub: "A 9-step system for scaling AI UGC without losing quality.", eyebrow: "AI UGC / 01",
+        badge: "NEW", footerLeft: "SYSTEM 01", page: "01 / 09", pageStyle: "slash", accent: "#FFE600"
+      },
+      {
+        kind: "content", layout: "list", eyebrow: "GETTING STARTED / 02", number: "01 / 08",
+        headline: "Research what already works", headlineEmphasis: "already works",
+        yellow: "Don't guess what to create.", bulletsTitle: "LOOK FOR",
+        bullets: ["Strong hooks", "Winning formats", "Angles that resonate"],
+        bulletStyle: "arrow", calloutTitle: "RULE", calloutBody: "Research what earns attention before you produce anything.",
+        calloutStyle: "rule", calloutIcon: "→", footerLeft: "PROFESSIONAL PUBLISHING - 01", page: "02 / 09", swipe: true, progress: true
+      },
+      {
+        kind: "content", layout: "steps", eyebrow: "WORKFLOW / 03",
+        headline: "Run it in three moves",
+        steps: [
+          { label: "STEP 01", title: "Choose one task", body: "Start with something low-risk." },
+          { label: "STEP 02", title: "Check the output", body: "Inspect before expanding." },
+          { label: "STEP 03", title: "Expand carefully", body: "Only after it proves reliable." }
+        ],
+        footerLeft: "ONE TASK AT A TIME", page: "03 / 09"
+      },
+      {
+        kind: "cta", layout: "cta", eyebrow: "NEXT / 09", badge: "FREE",
+        headline: "Want more practical AI UGC strategies?",
+        cta: "DM \"UGC\" for more tips.", ctaSub: "I reply to every DM.",
+        ctaButton: "Save this post", handle: "@yourbrand", swipe: true,
+        footerLeft: "Save for later use", page: "09 / 09", theme: "dark", accent: "#FFE600"
+      }
+    ], null, 2);
     function parseSlidesText(text) {
-      const slideRegex = /\\*\\*Slide\\s+(\\d+)\\s*[—–\\-]\\s*(.+?)\\*\\*/g;
+      const slideRegex = /\*\*Slide\s+(\d+)\s*[—–\-]\s*(.+?)\*\*/g;
       const matches = [...text.matchAll(slideRegex)];
       if (matches.length === 0) return null;
       const parsed = [];
@@ -50,28 +202,66 @@
         const isFirst = idx === 0;
         const isLast = idx === total - 1;
         const kind = isFirst ? "cover" : (isLast ? "cta" : "content");
-        const lines = s.body.split("\\n").map(l => l.trim()).filter(Boolean);
+        const allLines = s.body.split("\n").map(l => l.trim()).filter(Boolean);
         const bullets = [];
         const textLines = [];
-        for (const l of lines) {
-          if (/^[-*•]\\s/.test(l)) bullets.push(l.replace(/^[-*•]\\s*/, "").trim());
+        let bulletsTitle = "";
+        for (const l of allLines) {
+          if (/^[-*•]\s/.test(l)) bullets.push(l.replace(/^[-*•]\s*/, "").trim());
+          else if (/^[A-Za-z][^.!?]{0,40}:$/.test(l) && bullets.length === 0 && textLines.length > 0) bulletsTitle = l.replace(/:$/, "");
           else textLines.push(l);
         }
         const bodyText = textLines.join(" ");
+        const sentences = bodyText.split(/(?<=[.!?])\s+/).map(x => x.trim()).filter(Boolean);
+        const titleIsGeneric = /^(cover|intro|introduction|title|cta|conclusion|final|final slide)$/i.test(s.title);
         const slide = { kind, page: `${String(idx+1).padStart(2,"0")} / ${String(total).padStart(2,"0")}` };
         if (isFirst) {
+          slide.layout = "cover";
           slide.label = "EDUCATIONAL SERIES 01";
-          slide.headline = s.title;
-          slide.sub = bodyText || "";
+          if (titleIsGeneric) {
+            slide.headline = sentences[0] || s.title;
+            slide.sub = sentences.slice(1).join(" ");
+          } else {
+            slide.headline = s.title;
+            slide.sub = bodyText || "";
+          }
           slide.footerLeft = "SYSTEM 01";
+        } else if (isLast) {
+          slide.layout = "cta";
+          slide.number = `${pad2(contentCount)} / ${pad2(contentCount)} + NEXT`;
+          const ctaGeneric = titleIsGeneric || /^cta$/i.test(s.title);
+          if (ctaGeneric) {
+            slide.headline = sentences[0] || s.title;
+            slide.cta = sentences.slice(1).join(" ") || (bullets[0] || "");
+          } else {
+            slide.headline = s.title;
+            if (sentences.length > 1) slide.cta = sentences.slice(1).join(" ");
+            else if (bullets.length) slide.cta = bullets[0];
+            else if (bodyText) slide.cta = bodyText;
+          }
+          if (bullets.length > 1) slide.bullets = bullets.slice(1);
+          else if (bullets.length === 1 && slide.cta !== bullets[0]) slide.bullets = bullets;
+          slide.footerLeft = "Save for later use";
         } else {
-          slide.number = isLast ? `${contentCount} / ${contentCount} + NEXT` : `${idx} / ${contentCount}`;
+          slide.layout = "list";
+          slide.number = `${pad2(idx)} / ${pad2(contentCount)}`;
           slide.headline = s.title;
-          const yellow = bodyText.length > 0 && bodyText.length < 140 ? bodyText : (bullets[0] || "");
-          if (yellow) slide.yellow = yellow;
-          if (bullets.length) slide.bullets = bullets;
-          else if (bodyText) slide.bullets = [bodyText];
-          slide.footerLeft = isLast ? "Save for later use" : `PROFESSIONAL PUBLISHING - ${String(idx).padStart(2,"0")}`;
+          if (bulletsTitle) slide.bulletsTitle = bulletsTitle;
+          const keySentence = sentences.filter(x => x.length <= 120).sort((a, b) => a.length - b.length)[0];
+          if (bullets.length) {
+            const yellow = keySentence || bullets[0] || "";
+            if (yellow) slide.yellow = yellow;
+            slide.bullets = bullets;
+          } else if (sentences.length > 1) {
+            const last = sentences[sentences.length - 1];
+            const key = last.length <= 140 ? last : (keySentence || last);
+            if (key) slide.yellow = key;
+            slide.bullets = sentences.filter(x => x !== key).slice(0, 4);
+          } else if (bodyText) {
+            slide.yellow = bodyText;
+          }
+          slide.footerLeft = `PROFESSIONAL PUBLISHING - ${String(idx).padStart(2,"0")}`;
+          if (!isLast) slide.swipe = true;
         }
         return slide;
       });
@@ -109,9 +299,29 @@
       setSb: (c) => { if (c) localStorage.setItem(LS.sb, JSON.stringify(c)); else localStorage.removeItem(LS.sb); },
     };
 
+    function parseJsonLoose(text) {
+      let t = String(text || "").trim().replace(/```json/gi, "").replace(/```/g, "").trim();
+      try { return JSON.parse(t); } catch (e) {}
+      const start = t.indexOf("{");
+      const end = t.lastIndexOf("}");
+      if (start >= 0 && end > start) {
+        const sliced = t.slice(start, end + 1);
+        try { return JSON.parse(sliced); } catch (e) {}
+      }
+      throw new Error("AI returned invalid JSON. Try again, or use Parse (smart).");
+    }
+
+    function aiErrorMessage(e) {
+      const m = e && e.message ? e.message : "";
+      if (/Failed to fetch|NetworkError|Load failed|Network request failed/i.test(m)) {
+        return "Network blocked: the browser could not reach the AI provider. Some providers block direct calls from local files. Use Parse (smart) instead — it works fully offline.";
+      }
+      return m || "Request failed";
+    }
+
     // ---------- AI generation ----------
     async function generateCarousel(topic, designPrompt, provider, apiKey) {
-      const system = `You are a social media carousel content writer. Output ONLY valid JSON. Shape: {"title":"...","slides":[{"kind":"cover","label":"EDUCATIONAL SERIES 01","headline":"...","sub":"...","page":"01 / 07","footerLeft":"..."},{"kind":"content","number":"01 / 06","headline":"...","yellow":"key insight","bullets":["a","b","c"],"page":"02 / 07","footerLeft":"..."},...{"kind":"cta","number":"06 / 06 + NEXT","headline":"...","yellow":"...","bullets":["..."],"page":"07 / 07","footerLeft":"..."}]}. Exactly 7 slides: 1 cover + 5 content + 1 cta. Headlines as outcomes. Bullets as executable actions.`;
+      const system = `You are a social media carousel content writer. Output ONLY valid JSON. Shape: {"title":"...","slides":[{"kind":"cover","layout":"cover","label":"EDUCATIONAL SERIES 01","headline":"...","sub":"...","page":"01 / 07","footerLeft":"..."},{"kind":"content","layout":"list","number":"01 / 06","headline":"...","headlineEmphasis":"key phrase","yellow":"key insight","bullets":["a","b","c"],"calloutTitle":"RULE","calloutBody":"...","page":"02 / 07","footerLeft":"..."},...{"kind":"cta","layout":"cta","number":"06 / 06 + NEXT","headline":"...","cta":"DM \\"WORD\\" for more","ctaButton":"Save this post","page":"07 / 07","footerLeft":"..."}]}. Exactly 7 slides: 1 cover + 5 content + 1 cta. Headlines as outcomes. Bullets as executable actions. Optional fields you may use: layout, eyebrow, headerRight, headlineLines, headlineEmphasis, emphasisStyle, sub, lead, body, badge, pill, tags, chips, bulletsTitle, bulletStyle, checklist, steps, quote, quoteAuthor, stat, statLabel, calloutTitle, calloutBody, cta, ctaSub, ctaButton, handle, swipe, series. Never use fields outside this list.`;
       const userMsg = `Topic: ${topic}\nDesign/style: ${designPrompt || "Minimal educational."}\nGenerate now.`;
       let text = "";
       const isOpenAICompat = provider === "openai" || provider === "groq";
@@ -136,64 +346,281 @@
         const j = await res.json();
         text = j.content?.[0]?.text || "";
       }
-      const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
-      const slides = (parsed.slides || []).map(s => ({ kind: s.kind, label: s.label, number: s.number, headline: s.headline, sub: s.sub, yellow: s.yellow, bullets: s.bullets, page: s.page, footerLeft: s.footerLeft }));
+      const parsed = parseJsonLoose(text);
+      const slides = (parsed.slides || []).map(s => ({ ...s, kind: s.kind || "content" }));
       return { title: parsed.title || topic, slides };
     }
 
     // ---------- SlideView ----------
-    function SlideView({ slide, index, design }) {
-      const dark = design === "bold";
-      const bg = dark ? "bg-[#111] text-white" : "bg-white text-[#111]";
-      const border = dark ? "border-white/20" : "border-[#111]";
-      const muted = dark ? "opacity-60" : "opacity-50";
-      return (
-        <div className={`relative w-full h-full ${bg} border-[1.5px] ${border} flex flex-col justify-between overflow-hidden select-none`} style={{ padding: "48px 40px", width: 400, height: 500 }}>
-          <div>
-            <div className={`text-[10px] font-semibold tracking-[0.18em] uppercase ${muted} mb-10`}>
-              {slide.kind === "cover" ? slide.label : slide.number}
-            </div>
-            <h2 className={`font-extrabold leading-[0.92] tracking-[-0.03em] text-left ${slide.kind === "cover" ? "text-[30px] max-w-[95%]" : "text-[28px] max-w-[92%]"}`} style={{ lineHeight: 0.95 }}>
-              {slide.headline}
-            </h2>
-            {slide.kind === "cover" && slide.sub && (
-              <>
-                <div className={`w-full h-px ${dark ? "bg-white" : "bg-[#111]"} my-6`} />
-                <p className="text-[16px] leading-[1.35] opacity-70 max-w-[80%] text-left">{slide.sub}</p>
-              </>
-            )}
-            {slide.kind !== "cover" && slide.yellow && (
-              <div className="inline-block text-[#111] text-[13px] font-bold leading-[1.2] px-[10px] py-[6px] mt-6 max-w-[90%] text-left" style={{ backgroundColor: "#FFE600" }}>
-                {slide.yellow}
+    function emphasisNodes(text, slide, accent) {
+      if (text === undefined || text === null) return null;
+      const em = slide.headlineEmphasis;
+      if (!em) return text;
+      const str = String(text);
+      const idx = str.toLowerCase().indexOf(String(em).toLowerCase());
+      if (idx < 0) return str;
+      const before = str.slice(0, idx);
+      const mid = str.slice(idx, idx + String(em).length);
+      const after = str.slice(idx + String(em).length);
+      const style = slide.emphasisStyle || "marker";
+      if (style === "none") return str;
+      const color = slide.emphasisColor || accent;
+      const st = style === "underline"
+        ? { backgroundImage: `linear-gradient(${color},${color})`, backgroundRepeat: "no-repeat", backgroundSize: "100% 30%", backgroundPosition: "0 90%" }
+        : style === "box"
+          ? { background: color, padding: "0 3px", borderRadius: 2 }
+          : { background: color, padding: "0 2px", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" };
+      return <>{before}<span style={st}>{mid}</span>{after}</>;
+    }
+
+    function SlideView({ slide, index, design, accent: accentProp, total }) {
+      const s = slide || {};
+      const kind = s.kind || "content";
+      const dark = s.theme ? s.theme === "dark" : design === "bold";
+      const accent = s.accent || accentProp || "#FFE600";
+      const bg = s.background || (dark ? "#111111" : "#FFFFFF");
+      const fg = s.textColor || (dark ? "#FFFFFF" : "#111111");
+      const muted = s.mutedColor || (dark ? "rgba(255,255,255,0.55)" : "rgba(17,17,17,0.5)");
+      const fontFamily = s.serif || s.font === "serif" ? "'EB Garamond', Georgia, serif" : s.font === "mono" ? "ui-monospace, SFMono-Regular, Menlo, monospace" : "Inter, system-ui, sans-serif";
+      const align = s.align === "center" ? "center" : "left";
+      const marker = s.textCase === "upper" ? "uppercase" : "none";
+      const layout = s.layout || (kind === "cover" ? "cover" : kind === "cta" ? "cta" : "content");
+      const isCover = kind === "cover" || layout === "cover";
+      const imgPos = s.imagePosition || "top";
+      const bullets = Array.isArray(s.bullets) ? s.bullets : [];
+      const steps = Array.isArray(s.steps) ? s.steps : [];
+      const checklist = Array.isArray(s.checklist) ? s.checklist : [];
+      const tags = Array.isArray(s.tags) ? s.tags : [];
+      const chips = Array.isArray(s.chips) ? s.chips : [];
+      const pageText = (() => {
+        if (s.page) return s.page;
+        if (!total) return "";
+        if (s.pageStyle === "dash") return `${pad2(index + 1)} — ${pad2(total)}`;
+        if (s.pageStyle === "dots") return `• ${pad2(index + 1)} / ${pad2(total)}`;
+        return `${pad2(index + 1)} / ${pad2(total)}`;
+      })();
+      const bulletGlyph = { arrow: "→", dot: "•", dash: "–", check: "✓" }[s.bulletStyle] || "→";
+      const headlineSize = isCover || layout === "statement" ? 30 : layout === "quote" ? 26 : 28;
+      const bodyAlign = align;
+      const hasBackgroundImage = !!(s.backgroundImage || (s.image && imgPos === "background"));
+      const bgImage = s.backgroundImage || (imgPos === "background" ? s.image : "");
+      const imgStyle = { width: "100%", objectFit: s.imageFit || "cover", borderRadius: 3, display: "block" };
+      const contentRef = useRef(null);
+      const [fitScale, setFitScale] = useState(1);
+      useEffect(() => {
+        const el = contentRef.current;
+        if (!el || !el.parentElement) return;
+        el.style.transform = "none";
+        el.style.width = "100%";
+        const avail = el.parentElement.clientHeight;
+        const h = el.scrollHeight;
+        if (h > avail && h > 0) setFitScale(Math.max(0.6, avail / h));
+        else setFitScale(1);
+      }, [JSON.stringify(s), total]);
+
+      const imageBlock = (height, captionBelow) => s.image && imgPos !== "background" ? (
+        <div style={{ width: "100%", flexShrink: 0 }}>
+          <img src={s.image} alt={s.imageAlt || ""} style={{ ...imgStyle, height }} />
+          {captionBelow && s.imageCaption && <div style={{ fontSize: 8.5, color: muted, marginTop: 5, lineHeight: 1.3 }}>{s.imageCaption}</div>}
+        </div>
+      ) : null;
+
+      const content = (
+        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", height: "100%" }}>
+          <div style={{ flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
+          <div ref={contentRef} style={{ transform: `scale(${fitScale})`, transformOrigin: "top left", width: `${100 / fitScale}%` }}>
+            {!s.hideHeader && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: isCover ? 30 : 18, minHeight: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                  {s.logo && <img src={s.logo} alt="" style={{ height: 16, width: "auto", objectFit: "contain" }} />}
+                  {s.badge && <span style={{ background: accent, color: "#111", fontSize: 8.5, fontWeight: 800, letterSpacing: "0.08em", padding: "3px 6px", borderRadius: 2, textTransform: marker }}>{s.badge}</span>}
+                  {s.pill && <span style={{ border: `1px solid ${muted}`, color: fg, fontSize: 8.5, fontWeight: 600, letterSpacing: "0.08em", padding: "2px 7px", borderRadius: 20, textTransform: marker }}>{s.pill}</span>}
+                  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {s.eyebrow || (isCover ? (s.label || "") : (s.number || s.series || ""))}
+                  </span>
+                </div>
+                <span style={{ fontSize: 9, letterSpacing: "0.12em", color: muted, whiteSpace: "nowrap", textTransform: marker }}>{s.headerRight || ""}</span>
               </div>
             )}
-            {slide.kind !== "cover" && slide.bullets && (
-              <ul className="mt-7 flex flex-col gap-[18px]">
-                {slide.bullets.map((b, i) => (
-                  <li key={i} className="text-[14.5px] font-medium leading-[1.32] flex gap-2.5 text-left">
-                    <span className="font-bold shrink-0">→</span>
-                    <span>{String(b).replace(/^→\s?/, "")}</span>
-                  </li>
-                ))}
-              </ul>
+            {s.cornerLabel && (
+              <div style={{ position: "absolute", right: -40, top: -48, background: accent, color: "#111", fontSize: 8.5, fontWeight: 800, letterSpacing: "0.1em", padding: "5px 10px", textTransform: "uppercase" }}>{s.cornerLabel}</div>
             )}
-          </div>
-          <div>
-            <div className={`w-full h-px ${dark ? "bg-white" : "bg-[#111]"} mt-8 mb-3.5`} />
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] tracking-[0.12em] uppercase opacity-40 font-medium max-w-[60%] truncate">{slide.footerLeft}</span>
-              <span className="text-[10px] tracking-[0.12em] uppercase opacity-40">{slide.page}</span>
+
+            {imgPos === "top" && !!s.image && <div style={{ marginBottom: 16 }}>{imageBlock(96, true)}</div>}
+
+            <div style={{ display: "flex", gap: 18, alignItems: imgPos === "left" || imgPos === "right" ? "flex-start" : "stretch" }}>
+              {(imgPos === "left") && <div style={{ width: 120, flexShrink: 0 }}>{imageBlock(150, false)}</div>}
+              <div style={{ flex: 1, minWidth: 0, textAlign: bodyAlign }}>
+                {s.icon && <div style={{ fontSize: 22, lineHeight: 1, marginBottom: 10, color: accent }}>{s.icon}</div>}
+                {s.strikeText && <div style={{ fontSize: 12, color: muted, textDecoration: "line-through", marginBottom: 6, fontWeight: 500 }}>{s.strikeText}</div>}
+                <h2 style={{ fontFamily, fontSize: headlineSize, fontWeight: 800, lineHeight: s.lineHeight || 0.95, letterSpacing: s.letterSpacing || "-0.03em", margin: 0, maxWidth: s.maxWidth || (isCover ? "98%" : "95%"), textTransform: marker, textAlign: bodyAlign }}>
+                  {s.headlineLines && s.headlineLines.length
+                    ? s.headlineLines.map((line, i) => <span key={i} style={{ display: "block" }}>{emphasisNodes(line, s, accent)}{i === s.headlineLines.length - 1 ? (s.emoji || "") : ""}</span>)
+                    : <>{emphasisNodes(s.headline, s, accent)}{s.emoji || ""}</>}
+                </h2>
+                {s.underlineText && (
+                  <div style={{ display: "inline-block", borderBottom: `3px solid ${accent}`, paddingBottom: 2, marginTop: 7, fontSize: isCover ? 13 : 11.5, fontWeight: 600, color: fg }}>{s.underlineText}</div>
+                )}
+                {isCover && s.sub && (
+                  <>
+                    <div style={{ width: "100%", height: 1, background: fg, margin: "20px 0 14px" }} />
+                    <p style={{ fontSize: 15, lineHeight: 1.35, color: muted, maxWidth: "88%", margin: 0, textAlign: bodyAlign }}>{s.sub}</p>
+                  </>
+                )}
+                {s.lead && <p style={{ fontSize: 14, lineHeight: 1.35, fontWeight: 500, marginTop: 14, marginBottom: 0, maxWidth: "96%", textAlign: bodyAlign }}>{s.lead}</p>}
+                {s.body && <p style={{ fontSize: 11.5, lineHeight: 1.42, color: muted, marginTop: 12, marginBottom: 0, textAlign: bodyAlign }}>{s.body}</p>}
+
+                {s.stat && (
+                  <div style={{ marginTop: 18 }}>
+                    <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, color: accent, WebkitTextStroke: s.theme === "accent" ? "0" : "0" }}>{s.stat}</div>
+                    {s.statLabel && <div style={{ fontSize: 11, fontWeight: 700, marginTop: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.statLabel}</div>}
+                    {s.statCaption && <div style={{ fontSize: 9.5, color: muted, marginTop: 3 }}>{s.statCaption}</div>}
+                  </div>
+                )}
+
+                {s.quote && (
+                  <div style={{ marginTop: 18, borderLeft: `3px solid ${accent}`, paddingLeft: 12 }}>
+                    <div style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 17, lineHeight: 1.25, fontStyle: "italic" }}>“{s.quote}”</div>
+                    {(s.quoteAuthor || s.quoteRole) && (
+                      <div style={{ marginTop: 8 }}>
+                        {s.quoteAuthor && <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.quoteAuthor}</div>}
+                        {s.quoteRole && <div style={{ fontSize: 9, color: muted }}>{s.quoteRole}</div>}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {s.yellow && (
+                  <div style={{ display: "inline-block", background: accent, color: "#111", fontSize: 12.5, fontWeight: 700, lineHeight: 1.25, padding: "6px 9px", marginTop: 14, maxWidth: "96%", textAlign: bodyAlign }}>{s.yellow}</div>
+                )}
+
+                {(bullets.length > 0 || checklist.length > 0) && (
+                  <div style={{ marginTop: 16 }}>
+                    {s.bulletsTitle && <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: muted, marginBottom: 8 }}>{s.bulletsTitle}</div>}
+                    {bullets.length > 0 && (
+                      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                        {bullets.map((b, i) => (
+                          <li key={i} style={{ display: "flex", gap: 9, fontSize: 11.5, fontWeight: 500, lineHeight: 1.32, textAlign: "left" }}>
+                            {s.bulletStyle !== "none" && <span style={{ color: accent, fontWeight: 800, flexShrink: 0, minWidth: 10 }}>{s.bulletStyle === "number" ? `${i + 1}.` : bulletGlyph}</span>}
+                            <span>{String(b).replace(/^→\s?/, "")}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {checklist.length > 0 && (
+                      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                        {checklist.map((b, i) => (
+                          <li key={i} style={{ display: "flex", gap: 8, fontSize: 11, lineHeight: 1.3, alignItems: "flex-start", textAlign: "left" }}>
+                            <span style={{ width: 11, height: 11, border: `1.5px solid ${fg}`, borderRadius: 2, flexShrink: 0, marginTop: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 800, color: accent }}>✓</span>
+                            <span>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {steps.length > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(steps.length, 3)}, 1fr)`, gap: 10, marginTop: 18 }}>
+                    {steps.slice(0, 3).map((st, i) => (
+                      <div key={i} style={{ borderTop: `1.8px solid ${fg}`, paddingTop: 6, textAlign: "left" }}>
+                        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: muted }}>{st.label || `STEP ${pad2(i + 1)}`}</div>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 3, lineHeight: 1.2 }}>{st.title}</div>
+                        {st.body && <div style={{ fontSize: 8.5, color: muted, marginTop: 3, lineHeight: 1.3 }}>{st.body}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {tags.length > 0 && (
+                  <div style={{ marginTop: 14, fontSize: 10, fontWeight: 600, color: accent, letterSpacing: "0.02em", textAlign: bodyAlign }}>{tags.map(t => String(t).startsWith("#") ? t : `#${t}`).join("  ")}</div>
+                )}
+                {chips.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 12, justifyContent: align === "center" ? "center" : "flex-start" }}>
+                    {chips.map((c, i) => (
+                      <span key={i} style={{ border: `1px solid ${muted}`, borderRadius: 20, padding: "3px 8px", fontSize: 8.5, fontWeight: 600, color: fg }}>{c}</span>
+                    ))}
+                  </div>
+                )}
+
+                {(s.calloutTitle || s.calloutBody) && (
+                  <div style={{ marginTop: 16, borderLeft: `3px solid ${s.calloutStyle === "warning" ? "#E5484D" : s.calloutStyle === "tip" ? accent : fg}`, paddingLeft: 10, background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.025)", padding: "9px 10px" }}>
+                    {s.calloutTitle && <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 3 }}>{s.calloutIcon ? `${s.calloutIcon} ` : ""}{s.calloutTitle}</div>}
+                    {s.calloutBody && <div style={{ fontSize: 9.5, lineHeight: 1.38, color: muted }}>{s.calloutBody}</div>}
+                  </div>
+                )}
+
+                {s.note && <p style={{ fontSize: 9.5, lineHeight: 1.4, color: muted, marginTop: 12, marginBottom: 0 }}>{s.note}</p>}
+                {s.footnote && <p style={{ fontSize: 8, lineHeight: 1.3, color: muted, marginTop: 10, marginBottom: 0 }}>{s.footnote}</p>}
+
+                {(s.cta || s.ctaSub || s.ctaButton || s.handle) && (
+                  <div style={{ marginTop: 18 }}>
+                    {s.cta && <div style={{ fontSize: isCover ? 18 : 16, fontWeight: 800, lineHeight: 1.2, maxWidth: "96%" }}>{s.cta}</div>}
+                    {s.ctaSub && <div style={{ fontSize: 10.5, color: muted, marginTop: 6, lineHeight: 1.35 }}>{s.ctaSub}</div>}
+                    {s.ctaButton && (
+                      <div style={{ display: "inline-block", marginTop: 12, background: accent, color: "#111", borderRadius: 30, padding: "8px 16px", fontSize: 10.5, fontWeight: 800, letterSpacing: "0.01em" }}>{s.ctaButton}</div>
+                    )}
+                    {s.ctaUrl && <div style={{ fontSize: 8, color: muted, marginTop: 6, wordBreak: "break-all" }}>{s.ctaUrl}</div>}
+                    {s.handle && <div style={{ fontSize: 10, fontWeight: 700, marginTop: 10, letterSpacing: "0.04em" }}>{s.handle}</div>}
+                  </div>
+                )}
+              </div>
+              {(imgPos === "right") && <div style={{ width: 120, flexShrink: 0 }}>{imageBlock(150, false)}</div>}
             </div>
+
+            {imgPos === "bottom" && !!s.image && <div style={{ marginTop: 16 }}>{imageBlock(92, true)}</div>}
+
+            {s.disclaimer && <div style={{ fontSize: 7.5, lineHeight: 1.3, color: muted, marginTop: 12 }}>{s.disclaimer}</div>}
           </div>
-          <div className="pointer-events-none absolute -right-2 -bottom-1 text-[120px] font-[800] leading-none opacity-[0.02] select-none">
-            {String(index + 1).padStart(2, "0")}
           </div>
+
+          {!s.hideFooter && (
+            <div style={{ marginTop: 14 }}>
+              {s.divider !== false && <div style={{ width: "100%", height: 1, background: fg, opacity: 0.85, marginBottom: 8 }} />}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 8.5, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.55, fontWeight: 500, maxWidth: "45%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.footerLeft || s.series || ""}</span>
+                {s.footerCenter && <span style={{ fontSize: 8.5, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.45, maxWidth: "30%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.footerCenter}</span>}
+                <span style={{ fontSize: 8.5, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.55, fontWeight: 500, whiteSpace: "nowrap" }}>{s.footerRight || pageText}</span>
+              </div>
+              {(s.swipe || s.swipeText) && (
+                <div style={{ textAlign: "right", marginTop: 5, fontSize: 8, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: accent }}>{s.swipeText || "SWIPE →"}</div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+
+      return (
+        <div className="relative w-full h-full overflow-hidden select-none" style={{
+          width: 400, height: 500, padding: "38px 34px", background: bg, color: fg, fontFamily,
+          border: s.border === false ? "none" : `1.5px solid ${dark ? "rgba(255,255,255,0.25)" : "#111"}`,
+          borderRadius: s.radius || 0, boxSizing: "border-box"
+        }}>
+          {bgImage && (
+            <>
+              <img src={bgImage} alt={s.imageAlt || ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: s.imageFit || "cover" }} />
+              <div style={{ position: "absolute", inset: 0, background: dark ? "#111" : "#fff", opacity: s.imageOverlay !== undefined ? s.imageOverlay : 0.55 }} />
+            </>
+          )}
+          {s.grain && <div style={{ position: "absolute", inset: 0, opacity: 0.06, backgroundImage: "radial-gradient(rgba(0,0,0,0.9) 0.5px, transparent 0.5px)", backgroundSize: "4px 4px", pointerEvents: "none" }} />}
+          {s.overlayOpacity !== undefined && <div style={{ position: "absolute", inset: 0, background: fg, opacity: 1 - s.overlayOpacity, pointerEvents: "none" }} />}
+          {content}
+          {s.watermark !== false && (
+            <div className="pointer-events-none absolute -right-2 -bottom-1 text-[120px] font-[800] leading-none opacity-[0.02] select-none">
+              {pad2(index + 1)}
+            </div>
+          )}
+          {s.progress && (
+            <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 3, background: dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)" }}>
+              <div style={{ width: `${total ? ((index + 1) / total) * 100 : 0}%`, height: "100%", background: accent }} />
+            </div>
+          )}
         </div>
       );
     }
 
     // ---------- ExportButton ----------
-    function ExportButton({ slides, design }) {
+    function ExportButton({ slides, design, accent }) {
       const stageRef = useRef(null);
       const [busy, setBusy] = useState(false);
       const [msg, setMsg] = useState(null);
@@ -232,7 +659,7 @@
           <div ref={stageRef} style={{ position: "fixed", left: "-9999px", top: 0, width: 400, height: "auto", pointerEvents: "none", opacity: 1 }} aria-hidden>
             {slides.map((s, i) => (
               <div key={i} style={{ width: 400, height: 500 }}>
-                <SlideView slide={s} index={i} design={design} />
+                <SlideView slide={s} index={i} design={design} accent={accent} total={slides.length} />
               </div>
             ))}
           </div>
@@ -413,7 +840,7 @@
           setSlides(res.slides);
           setSlidesJson(JSON.stringify(res.slides, null, 2));
           if (!title) setTitle(res.title);
-        } catch (e) { setGenErr(e.message || "Generation failed"); }
+        } catch (e) { setGenErr(aiErrorMessage(e)); }
         finally { setGenBusy(false); }
       }
 
@@ -435,7 +862,7 @@
           const apiKey = settings.aiApiKey || "";
           if (!apiKey) throw new Error("No AI API key set. Go to Settings first.");
           const acc = accounts.find(a => a.id === accountId);
-          const prompt = `Convert the following raw carousel text into the slide JSON schema. Output ONLY valid JSON with {"title":"...","slides":[...]}. Each slide: kind (cover/content/cta), headline, yellow, bullets, page, footerLeft, label/number as appropriate. 7-9 slides.\n\nRaw text:\n${rawText}\n\nDesign style: ${acc?.prompt || "Minimal educational."}`;
+          const prompt = `Convert the following raw carousel text into the slide JSON schema. Output ONLY valid JSON with {"title":"...","slides":[...]}. Each slide: kind (cover/content/cta), layout, headline, headlineEmphasis, sub, lead, body, yellow, bullets, checklist, steps, quote, stat, calloutTitle, calloutBody, cta, ctaButton, page, footerLeft, label/number as appropriate. Keep the author's wording; do not invent facts. 7-9 slides.\n\nRaw text:\n${rawText}\n\nDesign style: ${acc?.prompt || "Minimal educational."}`;
           const system = "You convert raw carousel text into structured slide JSON. Output only valid JSON.";
           let text = "";
           const isOpenAICompat = provider === "openai" || provider === "groq";
@@ -450,15 +877,15 @@
             if (!res.ok) throw new Error(`Anthropic ${res.status}`);
             const j = await res.json(); text = j.content?.[0]?.text || "";
           }
-          const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
-          const slides = (parsed.slides || []).map(s => ({ kind: s.kind, label: s.label, number: s.number, headline: s.headline, sub: s.sub, yellow: s.yellow, bullets: s.bullets, page: s.page, footerLeft: s.footerLeft }));
+          const parsed = parseJsonLoose(text);
+          const slides = (parsed.slides || []).map(s => ({ ...s, kind: s.kind || "content" }));
           setSlides(slides);
           setSlidesJson(JSON.stringify(slides, null, 2));
           setMode("json");
           if (parsed.title && !title) setTitle(parsed.title);
           setParseMsg(`AI converted ${slides.length} slides. Review in JSON mode.`);
           setTimeout(() => setParseMsg(null), 4000);
-        } catch (e) { setGenErr(e.message || "Conversion failed"); }
+        } catch (e) { setGenErr(aiErrorMessage(e)); }
         finally { setGenBusy(false); }
       }
 
@@ -524,7 +951,7 @@
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {previewSlides.slice(0,3).map((s,i) => (
                     <div key={i} className="shrink-0 scale-[0.4] origin-top-left" style={{ width: 400, height: 500, marginRight: -240 }}>
-                      <SlideView slide={s} index={i} design={accounts.find(a=>a.id===accountId)?.design || "minimal"} />
+                      <SlideView slide={s} index={i} design={accounts.find(a=>a.id===accountId)?.design || "minimal"} accent={accounts.find(a=>a.id===accountId)?.accentColor || "#FFE600"} total={previewSlides.length} />
                     </div>
                   ))}
                 </div>
@@ -544,6 +971,7 @@
       if (!c) return <main className="p-10">Loading...</main>;
       const account = accounts.find(a => a.id === c.accountId);
       const design = account?.design || "minimal";
+      const accent = account?.accentColor || "#FFE600";
       function updateStatus(status) {
         const updated = { ...c, status, updatedAt: new Date().toISOString() };
         storage.saveCarousel(updated); setC(updated);
@@ -557,7 +985,7 @@
               <p className="text-sm opacity-60">{c.scheduledDate} · {c.status} · {account?.name} · {design}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <ExportButton slides={c.slides} design={design} />
+              <ExportButton slides={c.slides} design={design} accent={accent} />
               <button onClick={() => updateStatus("done")} className="text-sm px-3 py-1.5 rounded-full border border-black/15 hover:bg-black hover:text-white">Mark done</button>
               <button onClick={remove} className="text-sm px-3 py-1.5 rounded-full border border-red-200 text-red-600 hover:bg-red-600 hover:text-white">Delete</button>
             </div>
@@ -566,7 +994,7 @@
             {c.slides.map((s, i) => (
               <div key={i} className="shrink-0" style={{ width: 280 }}>
                 <div className="scale-[0.7] origin-top-left" style={{ width: 400, height: 500, marginBottom: -150 }}>
-                  <SlideView slide={s} index={i} design={design} />
+                  <SlideView slide={s} index={i} design={design} accent={accent} total={c.slides.length} />
                 </div>
               </div>
             ))}
@@ -676,6 +1104,20 @@
       const [sbUrl, setSbUrl] = useState(sb?.url || "");
       const [sbKey, setSbKey] = useState(sb?.anonKey || "");
       const [msg, setMsg] = useState(null);
+      const [copyMsg, setCopyMsg] = useState(null);
+      function copySample() {
+        const done = () => { setCopyMsg("Example JSON copied. Paste it into the slides JSON editor."); setTimeout(() => setCopyMsg(null), 4000); };
+        function fallbackCopy() {
+          const ta = document.createElement("textarea");
+          ta.value = SAMPLE_JSON; ta.style.position = "fixed"; ta.style.opacity = "0";
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand("copy"); done(); } catch { setCopyMsg("Copy failed — select the JSON below manually."); }
+          document.body.removeChild(ta);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(SAMPLE_JSON).then(done).catch(fallbackCopy);
+        } else { fallbackCopy(); }
+      }
       function save(e) {
         e.preventDefault();
         storage.saveSettings({ aiProvider: provider, aiApiKey: key });
@@ -709,28 +1151,51 @@
           </form>
 
           <section className="mt-8 border border-black/10 rounded-xl p-4">
-            <h2 className="text-lg font-bold mb-3">Slide JSON Field Reference</h2>
-            <p className="text-xs opacity-60 mb-3">Use these fields when editing slides as JSON. You can mix and match any of them.</p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
-                <thead><tr className="bg-black/5"><th className="text-left p-2 border border-black/10">Field</th><th className="text-left p-2 border border-black/10">Type</th><th className="text-left p-2 border border-black/10">Used in</th><th className="text-left p-2 border border-black/10">Description / Example</th></tr></thead>
-                <tbody>
-                  <tr><td className="p-2 border border-black/10 font-mono">kind</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">all</td><td className="p-2 border border-black/10">"cover" | "content" | "cta"</td></tr>
-                  <tr><td className="p-2 border border-black/10 font-mono">label</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">cover</td><td className="p-2 border border-black/10">Top label. e.g. "EDUCATIONAL SERIES 01"</td></tr>
-                  <tr><td className="p-2 border border-black/10 font-mono">number</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">content/cta</td><td className="p-2 border border-black/10">Step number. e.g. "01 / 06" or "06 / 06 + NEXT"</td></tr>
-                  <tr><td className="p-2 border border-black/10 font-mono">headline</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">all</td><td className="p-2 border border-black/10">Main title. Frame as an outcome.</td></tr>
-                  <tr><td className="p-2 border border-black/10 font-mono">sub</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">cover</td><td className="p-2 border border-black/10">Subtitle under headline. e.g. "A 6-part system for durable learning."</td></tr>
-                  <tr><td className="p-2 border border-black/10 font-mono">yellow</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">content/cta</td><td className="p-2 border border-black/10">Key insight highlight (yellow strip). e.g. "Effort is the feature."</td></tr>
-                  <tr><td className="p-2 border border-black/10 font-mono">bullets</td><td className="p-2 border border-black/10">string[]</td><td className="p-2 border border-black/10">content/cta</td><td className="p-2 border border-black/10">Executable action bullets. e.g. ["Close the book...","Explain in 4 sentences..."]</td></tr>
-                  <tr><td className="p-2 border border-black/10 font-mono">page</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">all</td><td className="p-2 border border-black/10">Page number. e.g. "02 / 07"</td></tr>
-                  <tr><td className="p-2 border border-black/10 font-mono">footerLeft</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">all</td><td className="p-2 border border-black/10">Footer metadata. e.g. "PROFESSIONAL PUBLISHING - 01"</td></tr>
-                </tbody>
-              </table>
+            <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
+              <div>
+                <h2 className="text-lg font-bold">Slide JSON Field Reference</h2>
+                <p className="text-xs opacity-60">{FIELD_COUNT} fields. Use any of them in a slide object — mix and match freely. Every field is optional except a headline or another content field.</p>
+              </div>
+              <button type="button" onClick={copySample} className="text-xs px-3 py-1.5 rounded-full bg-black text-white font-semibold hover:bg-black/80">Copy example JSON</button>
             </div>
-            <h3 className="text-sm font-bold mt-4 mb-2">Design prompt (how it works)</h3>
+            {copyMsg && <div className="text-xs text-green-600 mb-2">{copyMsg}</div>}
+
+            {FIELD_GROUPS.map((g) => (
+              <div key={g.group} className="mt-4">
+                <h3 className="text-xs font-extrabold uppercase tracking-[0.16em] bg-[#FFE600] inline-block px-2 py-1 mb-2">{g.group}</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-collapse">
+                    <thead><tr className="bg-black/5"><th className="text-left p-2 border border-black/10">Field</th><th className="text-left p-2 border border-black/10">Type</th><th className="text-left p-2 border border-black/10">Used in</th><th className="text-left p-2 border border-black/10">Description / Example</th></tr></thead>
+                    <tbody>
+                      {g.fields.map((f) => (
+                        <tr key={f[0]}>
+                          <td className="p-2 border border-black/10 font-mono whitespace-nowrap">{f[0]}</td>
+                          <td className="p-2 border border-black/10 whitespace-nowrap">{f[1]}</td>
+                          <td className="p-2 border border-black/10 whitespace-nowrap">{f[2]}</td>
+                          <td className="p-2 border border-black/10">{f[3]}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+
+            <h3 className="text-sm font-bold mt-6 mb-2">Example slide objects</h3>
+            <pre className="text-[10px] leading-relaxed bg-black/5 rounded-lg p-3 overflow-x-auto font-mono whitespace-pre">{SAMPLE_JSON}</pre>
+
+            <h3 className="text-sm font-bold mt-6 mb-2">Design prompt (how it works)</h3>
             <p className="text-xs opacity-70 leading-relaxed">
-              The "Design prompt" on an Account is a free-text description of the visual style & tone for that account (e.g. "Minimal educational, typography-first, black/white/yellow, short punchy headlines"). It is passed to the AI when generating or converting slides, so the AI matches your brand voice. It does NOT change the rendered design (the design is fixed by the "Design" dropdown: minimal/bold). To change the visual design, create a new Account with a different Design.
+              The "Design prompt" on an Account is a free-text description of the visual style & tone for that account (e.g. "Minimal educational, typography-first, black/white/yellow, short punchy headlines"). It is passed to the AI when generating or converting slides, so the AI matches your brand voice. It does NOT change the rendered design — the visual look comes from the Account's Design dropdown, accent color, and any per-slide style fields above (theme, accent, background, font, align, border, radius...). To make a different look permanent, create a new Account.
             </p>
+            <h3 className="text-sm font-bold mt-4 mb-2">Tips</h3>
+            <ul className="text-xs opacity-70 leading-relaxed list-disc pl-5 space-y-1">
+              <li>Use <span className="font-mono">theme: "dark"</span> for a single inverted slide; the Account design still applies to the rest.</li>
+              <li>Use <span className="font-mono">layout</span> to change structure without changing content: list, steps, quote, stat, split, checklist, callout, cta.</li>
+              <li>Use <span className="font-mono">headlineEmphasis</span> plus <span className="font-mono">emphasisStyle</span> to reproduce the yellow highlighter look.</li>
+              <li>Images accept https URLs or data URIs; use <span className="font-mono">imagePosition: "background"</span> with <span className="font-mono">imageOverlay</span> for full-bleed photos.</li>
+              <li>Leave a field out entirely to use the default. Booleans default to on for border, divider and watermark.</li>
+            </ul>
           </section>
         </main>
       );
