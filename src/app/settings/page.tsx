@@ -57,6 +57,7 @@ export default function SettingsPage() {
             <label className="flex flex-col gap-1">
               <span className="text-xs uppercase tracking-wider opacity-60">AI provider</span>
               <select value={provider} onChange={(e) => setProvider(e.target.value as any)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full">
+                <option value="groq">Groq (llama-3.3-70b) — fast & free tier</option>
                 <option value="openai">OpenAI (gpt-4o-mini)</option>
                 <option value="anthropic">Anthropic (claude-3-5-haiku)</option>
               </select>

@@ -3,7 +3,7 @@ import { Slide } from "./types";
 export interface GenerateInput {
   topic: string;
   designPrompt?: string;
-  provider: "openai" | "anthropic";
+  provider: "openai" | "anthropic" | "groq";
   apiKey: string;
   count?: number;
 }
@@ -35,18 +35,20 @@ export async function generateCarousel(input: GenerateInput): Promise<{ title: s
   const userMsg = `Topic: ${topic}\n\nDesign/style context (follow tone): ${designPrompt || "Minimal educational, typography-first."}\n\nGenerate the 7-slide carousel JSON now.`;
 
   let text = "";
-  if (provider === "openai") {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const isOpenAICompat = provider === "openai" || provider === "groq";
+  if (isOpenAICompat) {
+    const base = provider === "groq" ? "https://api.groq.com/openai/v1" : "https://api.openai.com/v1";
+    const model = provider === "groq" ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
+    const res = await fetch(`${base}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model,
         messages: [{ role: "system", content: SYSTEM }, { role: "user", content: userMsg }],
-        response_format: { type: "json_object" },
         temperature: 0.7,
       }),
     });
-    if (!res.ok) throw new Error(`OpenAI error ${res.status}: ${await res.text()}`);
+    if (!res.ok) throw new Error(`${provider} error ${res.status}: ${await res.text()}`);
     const json = await res.json();
     text = json.choices?.[0]?.message?.content || "";
   } else {

@@ -31,6 +31,52 @@
       { id: "minimal", name: "Minimal Educational (black/white/yellow)" },
       { id: "bold", name: "Bold Dark (inverted)" },
     ];
+    function parseSlidesText(text) {
+      const slideRegex = /\\*\\*Slide\\s+(\\d+)\\s*[—–\\-]\\s*(.+?)\\*\\*/g;
+      const matches = [...text.matchAll(slideRegex)];
+      if (matches.length === 0) return null;
+      const parsed = [];
+      for (let i = 0; i < matches.length; i++) {
+        const m = matches[i];
+        const title = m[2].trim();
+        const start = m.index + m[0].length;
+        const end = i + 1 < matches.length ? matches[i + 1].index : text.length;
+        const body = text.slice(start, end).trim();
+        parsed.push({ title, body });
+      }
+      const total = parsed.length;
+      const contentCount = total - 1;
+      return parsed.map((s, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === total - 1;
+        const kind = isFirst ? "cover" : (isLast ? "cta" : "content");
+        const lines = s.body.split("\\n").map(l => l.trim()).filter(Boolean);
+        const bullets = [];
+        const textLines = [];
+        for (const l of lines) {
+          if (/^[-*•]\\s/.test(l)) bullets.push(l.replace(/^[-*•]\\s*/, "").trim());
+          else textLines.push(l);
+        }
+        const bodyText = textLines.join(" ");
+        const slide = { kind, page: `${String(idx+1).padStart(2,"0")} / ${String(total).padStart(2,"0")}` };
+        if (isFirst) {
+          slide.label = "EDUCATIONAL SERIES 01";
+          slide.headline = s.title;
+          slide.sub = bodyText || "";
+          slide.footerLeft = "SYSTEM 01";
+        } else {
+          slide.number = isLast ? `${contentCount} / ${contentCount} + NEXT` : `${idx} / ${contentCount}`;
+          slide.headline = s.title;
+          const yellow = bodyText.length > 0 && bodyText.length < 140 ? bodyText : (bullets[0] || "");
+          if (yellow) slide.yellow = yellow;
+          if (bullets.length) slide.bullets = bullets;
+          else if (bodyText) slide.bullets = [bodyText];
+          slide.footerLeft = isLast ? "Save for later use" : `PROFESSIONAL PUBLISHING - ${String(idx).padStart(2,"0")}`;
+        }
+        return slide;
+      });
+    }
+
     const defaultSlides = () => ([
       { kind: "cover", label: "EDUCATIONAL SERIES 01", headline: "Your headline here.", sub: "A short subtitle.", page: "01 / 07", footerLeft: "SYSTEM 01" },
       { kind: "content", number: "01 / 06", headline: "First insight headline.", yellow: "Key insight highlight.", bullets: ["Action one.", "Action two.", "Action three."], page: "02 / 07", footerLeft: "PROFESSIONAL PUBLISHING - 01" },
@@ -68,13 +114,16 @@
       const system = `You are a social media carousel content writer. Output ONLY valid JSON. Shape: {"title":"...","slides":[{"kind":"cover","label":"EDUCATIONAL SERIES 01","headline":"...","sub":"...","page":"01 / 07","footerLeft":"..."},{"kind":"content","number":"01 / 06","headline":"...","yellow":"key insight","bullets":["a","b","c"],"page":"02 / 07","footerLeft":"..."},...{"kind":"cta","number":"06 / 06 + NEXT","headline":"...","yellow":"...","bullets":["..."],"page":"07 / 07","footerLeft":"..."}]}. Exactly 7 slides: 1 cover + 5 content + 1 cta. Headlines as outcomes. Bullets as executable actions.`;
       const userMsg = `Topic: ${topic}\nDesign/style: ${designPrompt || "Minimal educational."}\nGenerate now.`;
       let text = "";
-      if (provider === "openai") {
-        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      const isOpenAICompat = provider === "openai" || provider === "groq";
+      if (isOpenAICompat) {
+        const base = provider === "groq" ? "https://api.groq.com/openai/v1" : "https://api.openai.com/v1";
+        const model = provider === "groq" ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
+        const res = await fetch(`${base}/chat/completions`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify({ model: "gpt-4o-mini", messages: [{role:"system",content:system},{role:"user",content:userMsg}], response_format: {type:"json_object"}, temperature: 0.7 }),
+          body: JSON.stringify({ model, messages: [{role:"system",content:system},{role:"user",content:userMsg}], temperature: 0.7 }),
         });
-        if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
+        if (!res.ok) throw new Error(`${provider} ${res.status}: ${await res.text()}`);
         const j = await res.json();
         text = j.choices?.[0]?.message?.content || "";
       } else {
@@ -345,9 +394,11 @@
       const [slides, setSlides] = useState(defaultSlides());
       const [slidesJson, setSlidesJson] = useState(JSON.stringify(defaultSlides(), null, 2));
       const [mode, setMode] = useState("form");
+      const [rawText, setRawText] = useState("");
       const [topic, setTopic] = useState("");
       const [genBusy, setGenBusy] = useState(false);
       const [genErr, setGenErr] = useState(null);
+      const [parseMsg, setParseMsg] = useState(null);
 
       async function handleGenerate() {
         if (!topic.trim()) return;
@@ -363,6 +414,51 @@
           setSlidesJson(JSON.stringify(res.slides, null, 2));
           if (!title) setTitle(res.title);
         } catch (e) { setGenErr(e.message || "Generation failed"); }
+        finally { setGenBusy(false); }
+      }
+
+      function handleParse() {
+        const parsed = parseSlidesText(rawText);
+        if (!parsed) { setParseMsg("No slides found. Use '**Slide N — Title**' format."); return; }
+        setSlides(parsed);
+        setSlidesJson(JSON.stringify(parsed, null, 2));
+        setMode("json");
+        setParseMsg(`Parsed ${parsed.length} slides. Review in JSON mode.`);
+        setTimeout(() => setParseMsg(null), 4000);
+      }
+      async function handleAIConvert() {
+        if (!rawText.trim()) return;
+        setGenBusy(true); setGenErr(null);
+        try {
+          const settings = storage.getSettings();
+          const provider = settings.aiProvider || "openai";
+          const apiKey = settings.aiApiKey || "";
+          if (!apiKey) throw new Error("No AI API key set. Go to Settings first.");
+          const acc = accounts.find(a => a.id === accountId);
+          const prompt = `Convert the following raw carousel text into the slide JSON schema. Output ONLY valid JSON with {"title":"...","slides":[...]}. Each slide: kind (cover/content/cta), headline, yellow, bullets, page, footerLeft, label/number as appropriate. 7-9 slides.\n\nRaw text:\n${rawText}\n\nDesign style: ${acc?.prompt || "Minimal educational."}`;
+          const system = "You convert raw carousel text into structured slide JSON. Output only valid JSON.";
+          let text = "";
+          const isOpenAICompat = provider === "openai" || provider === "groq";
+          if (isOpenAICompat) {
+            const base = provider === "groq" ? "https://api.groq.com/openai/v1" : "https://api.openai.com/v1";
+            const model = provider === "groq" ? "llama-3.3-70b-versatile" : "gpt-4o-mini";
+            const res = await fetch(`${base}/chat/completions`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }, body: JSON.stringify({ model, messages: [{role:"system",content:system},{role:"user",content:prompt}], temperature: 0.5 }) });
+            if (!res.ok) throw new Error(`${provider} ${res.status}`);
+            const j = await res.json(); text = j.choices?.[0]?.message?.content || "";
+          } else {
+            const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }, body: JSON.stringify({ model: "claude-3-5-haiku-latest", max_tokens: 3000, system, messages: [{role:"user",content:prompt}] }) });
+            if (!res.ok) throw new Error(`Anthropic ${res.status}`);
+            const j = await res.json(); text = j.content?.[0]?.text || "";
+          }
+          const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+          const slides = (parsed.slides || []).map(s => ({ kind: s.kind, label: s.label, number: s.number, headline: s.headline, sub: s.sub, yellow: s.yellow, bullets: s.bullets, page: s.page, footerLeft: s.footerLeft }));
+          setSlides(slides);
+          setSlidesJson(JSON.stringify(slides, null, 2));
+          setMode("json");
+          if (parsed.title && !title) setTitle(parsed.title);
+          setParseMsg(`AI converted ${slides.length} slides. Review in JSON mode.`);
+          setTimeout(() => setParseMsg(null), 4000);
+        } catch (e) { setGenErr(e.message || "Conversion failed"); }
         finally { setGenBusy(false); }
       }
 
@@ -394,9 +490,24 @@
                   <option value="draft">draft</option><option value="scheduled">scheduled</option><option value="done">done</option>
                 </select>
               </Field>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button type="button" onClick={() => setMode(mode==="form"?"json":"form")} className="text-xs px-3 py-1.5 rounded-full border border-black/15">{mode==="form"?"Edit as JSON":"Edit as form"}</button>
+                <button type="button" onClick={() => setMode(mode==="text"?"form":"text")} className="text-xs px-3 py-1.5 rounded-full border border-black/15 bg-[#FFE600]">{mode==="text"?"Back to form":"Paste as text"}</button>
               </div>
+              {mode === "text" && (
+                <>
+                  <Field label="Paste your slide text (use '**Slide N — Title**' format)">
+                    <textarea value={rawText} onChange={e=>setRawText(e.target.value)} rows={16} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full font-mono" placeholder={"**Slide 1 — Cover**\n\nYour headline here.\n\n**Slide 2 — Title**\n\nBody text..."} />
+                  </Field>
+                  <div className="flex gap-2 flex-wrap">
+                    <button type="button" onClick={handleParse} className="bg-black text-white rounded-full h-9 px-4 text-sm font-semibold hover:bg-black/80">Parse (smart)</button>
+                    <button type="button" onClick={handleAIConvert} disabled={genBusy} className="bg-[#FFE600] text-black rounded-full h-9 px-4 text-sm font-semibold hover:bg-[#ffd700] disabled:opacity-60">{genBusy ? "Converting..." : "Convert with AI"}</button>
+                  </div>
+                  {parseMsg && <div className="text-sm text-green-600">{parseMsg}</div>}
+                  {genErr && <div className="text-red-600 text-xs">{genErr}</div>}
+                  <p className="text-xs opacity-50">"Parse (smart)" converts instantly without AI. "Convert with AI" uses your API key for better accuracy.</p>
+                </>
+              )}
               {mode === "json" && <Field label="Slides JSON"><textarea value={slidesJson} onChange={e=>setSlidesJson(e.target.value)} rows={18} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full font-mono" /></Field>}
               <button className="bg-black text-white rounded-full h-10 font-semibold text-sm hover:bg-black/80">Save Carousel</button>
             </form>
@@ -559,7 +670,7 @@
     // ---------- Settings ----------
     function SettingsPage({ nav }) {
       const settings = storage.getSettings();
-      const [provider, setProvider] = useState(settings.aiProvider || "openai");
+      const [provider, setProvider] = useState(settings.aiProvider || "groq");
       const [key, setKey] = useState(settings.aiApiKey || "");
       const sb = storage.getSb();
       const [sbUrl, setSbUrl] = useState(sb?.url || "");
@@ -586,6 +697,7 @@
               <legend className="text-xs uppercase tracking-wider opacity-60 px-2">AI generation</legend>
               <Field label="AI provider">
                 <select value={provider} onChange={e=>setProvider(e.target.value)} className="border border-black/15 rounded-lg px-3 py-2 text-sm w-full">
+                  <option value="groq">Groq (llama-3.3-70b) — fast & free tier</option>
                   <option value="openai">OpenAI (gpt-4o-mini)</option>
                   <option value="anthropic">Anthropic (claude-3-5-haiku)</option>
                 </select>
@@ -595,6 +707,31 @@
             <button className="bg-black text-white rounded-full h-10 font-semibold text-sm hover:bg-black/80">Save</button>
             {msg && <div className="text-sm text-green-600">{msg}</div>}
           </form>
+
+          <section className="mt-8 border border-black/10 rounded-xl p-4">
+            <h2 className="text-lg font-bold mb-3">Slide JSON Field Reference</h2>
+            <p className="text-xs opacity-60 mb-3">Use these fields when editing slides as JSON. You can mix and match any of them.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead><tr className="bg-black/5"><th className="text-left p-2 border border-black/10">Field</th><th className="text-left p-2 border border-black/10">Type</th><th className="text-left p-2 border border-black/10">Used in</th><th className="text-left p-2 border border-black/10">Description / Example</th></tr></thead>
+                <tbody>
+                  <tr><td className="p-2 border border-black/10 font-mono">kind</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">all</td><td className="p-2 border border-black/10">"cover" | "content" | "cta"</td></tr>
+                  <tr><td className="p-2 border border-black/10 font-mono">label</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">cover</td><td className="p-2 border border-black/10">Top label. e.g. "EDUCATIONAL SERIES 01"</td></tr>
+                  <tr><td className="p-2 border border-black/10 font-mono">number</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">content/cta</td><td className="p-2 border border-black/10">Step number. e.g. "01 / 06" or "06 / 06 + NEXT"</td></tr>
+                  <tr><td className="p-2 border border-black/10 font-mono">headline</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">all</td><td className="p-2 border border-black/10">Main title. Frame as an outcome.</td></tr>
+                  <tr><td className="p-2 border border-black/10 font-mono">sub</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">cover</td><td className="p-2 border border-black/10">Subtitle under headline. e.g. "A 6-part system for durable learning."</td></tr>
+                  <tr><td className="p-2 border border-black/10 font-mono">yellow</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">content/cta</td><td className="p-2 border border-black/10">Key insight highlight (yellow strip). e.g. "Effort is the feature."</td></tr>
+                  <tr><td className="p-2 border border-black/10 font-mono">bullets</td><td className="p-2 border border-black/10">string[]</td><td className="p-2 border border-black/10">content/cta</td><td className="p-2 border border-black/10">Executable action bullets. e.g. ["Close the book...","Explain in 4 sentences..."]</td></tr>
+                  <tr><td className="p-2 border border-black/10 font-mono">page</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">all</td><td className="p-2 border border-black/10">Page number. e.g. "02 / 07"</td></tr>
+                  <tr><td className="p-2 border border-black/10 font-mono">footerLeft</td><td className="p-2 border border-black/10">string</td><td className="p-2 border border-black/10">all</td><td className="p-2 border border-black/10">Footer metadata. e.g. "PROFESSIONAL PUBLISHING - 01"</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h3 className="text-sm font-bold mt-4 mb-2">Design prompt (how it works)</h3>
+            <p className="text-xs opacity-70 leading-relaxed">
+              The "Design prompt" on an Account is a free-text description of the visual style & tone for that account (e.g. "Minimal educational, typography-first, black/white/yellow, short punchy headlines"). It is passed to the AI when generating or converting slides, so the AI matches your brand voice. It does NOT change the rendered design (the design is fixed by the "Design" dropdown: minimal/bold). To change the visual design, create a new Account with a different Design.
+            </p>
+          </section>
         </main>
       );
     }
